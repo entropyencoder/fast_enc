@@ -1257,6 +1257,18 @@ Void TComTrQuant::transformNxN( TComDataCU* pcCU,
   {
     xT(bitDepth, uiMode, pcResidual, uiStride, m_plTempCoeff, uiWidth, uiHeight );
   }
+
+#if CLR_COEF
+  // Test 1 : clear the coefficients with higher frequencies than half of the maximum
+  for(int i=uiHeight/2; i<uiHeight; i++)
+  {
+    for(int j=uiWidth/2; j<uiWidth; j++)
+    {
+      m_plTempCoeff[i*uiHeight + j] = 0;
+    }
+  }
+#endif
+
   xQuant( pcCU, m_plTempCoeff, rpcCoeff,
 #if ADAPTIVE_QP_SELECTION
        rpcArlCoeff,
