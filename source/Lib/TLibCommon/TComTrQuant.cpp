@@ -1259,14 +1259,31 @@ Void TComTrQuant::transformNxN( TComDataCU* pcCU,
   }
 
 #if CLR_COEF
-  // Test 1 : clear the coefficients with higher frequencies than half of the maximum
-  for(int i=uiHeight/2; i<uiHeight; i++)
+  // Test 1 : clear the coefficients with horizontal and vertical frequencies of (N / MIN_CLR_FREQ_DENOM) or higher
+  for(int i=uiHeight/MIN_CLR_FREQ_DENOM; i<uiHeight; i++)
   {
-    for(int j=uiWidth/2; j<uiWidth; j++)
+    for(int j=uiWidth/MIN_CLR_FREQ_DENOM; j<uiWidth; j++)
     {
       m_plTempCoeff[i*uiHeight + j] = 0;
     }
   }
+
+  //// Test 2 : clear the coefficients with horizontal or vertical frequencies of (N / MIN_CLR_FREQ_DENOM) or higher
+  //for(int i=0; i<uiHeight; i++)
+  //{
+  //  for(int j=uiWidth/MIN_CLR_FREQ_DENOM; j<uiWidth; j++)
+  //  {
+  //    m_plTempCoeff[i*uiHeight + j] = 0;
+  //  }
+  //}
+  //for(int i=uiHeight/MIN_CLR_FREQ_DENOM; i<uiHeight; i++)
+  //{
+  //  for(int j=0; j<uiWidth; j++)
+  //  {
+  //    m_plTempCoeff[i*uiHeight + j] = 0;
+  //  }
+  //}
+
 #endif
 
   xQuant( pcCU, m_plTempCoeff, rpcCoeff,

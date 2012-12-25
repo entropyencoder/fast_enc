@@ -42,7 +42,8 @@
 //! \{
 
 // yschoi-added macros start
-#define CLR_COEF    1   // Enable clearing high frequency coefficients
+#define CLR_COEF            1   // Enable clearing high frequency coefficients
+#define MIN_CLR_FREQ_DENOM  4   // Denominator for min frequency being cleared (e.g. set (N / MIN_CLR_FREQ_DENOM) or higher freq component to zero for NxN transform )
 // yschoi-added macros end
 
 
