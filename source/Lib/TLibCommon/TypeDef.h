@@ -41,13 +41,13 @@
 //! \ingroup TLibCommon
 //! \{
 
-// yschoi-added macros start
-#define CLR_COEF            1   // Enable clearing high frequency coefficients
-#define CLR_COEF_LEVEL      3//4   // Determine the degree of coefficient clearing (Zero is NOT allowed.)
+///// yschoi-added macros start
+#define CLR_COEF            0 //1   // Enable clearing high frequency coefficients
+#define CLR_COEF_LEVEL      3 //4   // Determine the degree of coefficient clearing (Zero is NOT allowed.)
                                 // How it works depends on the context.
                                 // e.g. denominator, i.e. set (N / MIN_CLR_FREQ_DENOM) or higher freq component to zero for NxN transform 
 
-// yschoi-added macros end
+///// yschoi-added macros end
 
 
 #define SUFFIX_SEI_NUT_DECODED_HASH_SEI             1  ///< K0120: Use the suffix SEI NUT for the decoded hash SEI message
