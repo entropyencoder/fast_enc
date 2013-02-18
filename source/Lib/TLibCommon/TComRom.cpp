@@ -46,6 +46,12 @@
 //! \ingroup TLibCommon
 //! \{
 
+///// yschoi-added macros start
+#if EN_GET_RDOQ_STATS  
+
+#endif
+///// yschoi-added macros end
+
 // initialize ROM variables
 Void initROM()
 {

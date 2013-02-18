@@ -1935,6 +1935,10 @@ Void TComTrQuant::xRateDistOptQuant                 ( TComDataCU*               
     d64BestCost  = d64BlockUncodedCost + xGetICost( m_pcEstBitsSbac->blockCbpBits[ ui16CtxCbf ][ 0 ] );
     d64BaseCost += xGetICost( m_pcEstBitsSbac->blockCbpBits[ ui16CtxCbf ][ 1 ] );
   }
+
+#if EN_LC_RDOQ_TEST_2
+  d64BestCost = MAX_DOUBLE;
+#endif
   
   Bool bFoundLast = false;
   for (Int iCGScanPos = iCGLastScanPos; iCGScanPos >= 0; iCGScanPos--)
@@ -1980,6 +1984,9 @@ Void TComTrQuant::xRateDistOptQuant                 ( TComDataCU*               
       {
         break;
       }
+#if EN_LC_RDOQ_TEST_0
+      if (iScanPos == iLastScanPos) break;
+#endif
     } // end if (uiSigCoeffGroupFlag[ uiCGBlkPos ])
   } // end for 
   
