@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,17 +74,11 @@ TDecBinCABAC::start()
 Void
 TDecBinCABAC::finish()
 {
-}
-
-Void 
-TDecBinCABAC::flush()
-{
-  while (m_pcTComBitstream->getNumBitsLeft() > 0 && m_pcTComBitstream->getNumBitsUntilByteAligned() != 0)
-  {
-    UInt uiBits;
-    m_pcTComBitstream->read ( 1, uiBits );
-  }
-  start();
+  UInt lastByte;
+  
+  m_pcTComBitstream->peekPreviousByte( lastByte );
+  // Check for proper stop/alignment pattern
+  assert( ((lastByte << (8 + m_bitsNeeded)) & 0xff) == 0x80 );
 }
 
 /**
@@ -238,60 +232,6 @@ TDecBinCABAC::decodeBinTrm( UInt& ruiBin )
       }
     }
   }
-}
-
-/** Reset BAC register values.
- * \returns Void
- */
-Void TDecBinCABAC::resetBac()
-{
-  m_uiRange    = 510;
-  m_bitsNeeded = -8;
-  m_uiValue    = m_pcTComBitstream->read( 16 );
-}
-
-#if !REMOVE_BURST_IPCM
-/** Decode subsequent_pcm_num.
- * \param numSubseqIPCM
- * \returns Void
- */
-Void TDecBinCABAC::decodeNumSubseqIPCM( Int& numSubseqIPCM )
-{
-  UInt bit = 0;
-
-  numSubseqIPCM = 0;
-
-  do
-  {
-    m_uiValue += m_uiValue;
-    if ( ++m_bitsNeeded >= 0 )
-    {
-      m_bitsNeeded = -8;
-      m_uiValue += m_pcTComBitstream->readByte();
-    }
-    bit = ((m_uiValue&128)>>7);
-    numSubseqIPCM++;
-  }
-  while( bit && (numSubseqIPCM < 3 ));
-
-  if( bit && (numSubseqIPCM == 3 ))
-  {
-    numSubseqIPCM++;
-  }
-
-  numSubseqIPCM --;
-}
-#endif
-
-/** Decode PCM alignment zero bits.
- * \returns Void
- */
-Void TDecBinCABAC::decodePCMAlignBits()
-{
-  Int iNum = m_pcTComBitstream->getNumBitsUntilByteAligned();
-  
-  UInt uiBit = 0;
-  m_pcTComBitstream->read( iNum, uiBit );
 }
 
 /** Read a PCM code.

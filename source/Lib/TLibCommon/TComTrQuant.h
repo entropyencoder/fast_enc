@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,8 +67,6 @@ typedef struct
 
   Int blockCbpBits[3*NUM_QT_CBF_CTX][2];
   Int blockRootCbpBits[4][2];
-  Int scanZigzag[2];            ///< flag for zigzag scan
-  Int scanNonZigzag[2];         ///< flag for non zigzag scan
 } estBitsSbacStruct;
 
 // ====================================================================================================================
@@ -120,10 +118,8 @@ public:
   ~TComTrQuant();
   
   // initialize class
-  Void init                 ( UInt uiMaxWidth, UInt uiMaxHeight, UInt uiMaxTrSize, Int iSymbolMode = 0, UInt *aTable4 = NULL, UInt *aTable8 = NULL, UInt *aTableLastPosVlcIndex=NULL, Bool useRDOQ = false,  
-#if RDOQ_TRANSFORMSKIP
-    Bool useRDOQTS = false,  
-#endif
+  Void init                 ( UInt uiMaxTrSize, Bool useRDOQ = false,  
+    Bool useRDOQTS = false,
     Bool bEnc = false, Bool useTransformSkipFast = false
 #if ADAPTIVE_QP_SELECTION
     , Bool bUseAdaptQpSelect = false
@@ -152,9 +148,9 @@ public:
   // Misc functions
   Void setQPforQuant( Int qpy, TextType eTxtType, Int qpBdOffset, Int chromaQPOffset);
 
-#if RDOQ_CHROMA_LAMBDA 
-  Void setLambda(Double dLambdaLuma, Double dLambdaChroma) { m_dLambdaLuma = dLambdaLuma; m_dLambdaChroma = dLambdaChroma; }
-  Void selectLambda(TextType eTType) { m_dLambda = (eTType == TEXT_LUMA) ? m_dLambdaLuma : m_dLambdaChroma; }
+#if RDOQ_CHROMA_LAMBDA
+  Void setLambdas ( const Double lambdas[3] ) { for (Int component = 0; component < 3; component++) m_lambdas[component] = lambdas[component]; }
+  Void selectLambda(TextType eTType) { m_dLambda = (eTType == TEXT_LUMA) ? m_lambdas[0] : ((eTType == TEXT_CHROMA_U) ? m_lambdas[1] : m_lambdas[2]); }
 #else
   Void setLambda(Double dLambda) { m_dLambda = dLambda;}
 #endif
@@ -170,14 +166,11 @@ public:
                                      Int                             posX,
                                      Int                             posY,
                                      Int                             log2BlkSize,
-                                     Int                             width
-                                    ,Int                             height
-                                    ,TextType                        textureType
+                                     TextType                        textureType
                                     );
   static UInt getSigCoeffGroupCtxInc  ( const UInt*                   uiSigCoeffGroupFlag,
                                        const UInt                       uiCGPosX,
                                        const UInt                       uiCGPosY,
-                                       const UInt                     scanIdx,
                                        Int width, Int height);
   Void initScalingList                      ();
   Void destroyScalingList                   ();
@@ -213,17 +206,14 @@ protected:
   
   QpParam  m_cQP;
 #if RDOQ_CHROMA_LAMBDA
-  Double   m_dLambdaLuma;
-  Double   m_dLambdaChroma;
+  Double   m_lambdas[3];
 #endif
   Double   m_dLambda;
   UInt     m_uiRDOQOffset;
   UInt     m_uiMaxTrSize;
   Bool     m_bEnc;
   Bool     m_useRDOQ;
-#if RDOQ_TRANSFORMSKIP
   Bool     m_useRDOQTS;
-#endif
 #if ADAPTIVE_QP_SELECTION
   Bool     m_bUseAdaptQpSelect;
 #endif
@@ -239,7 +229,7 @@ private:
   // skipping Transform
   Void xTransformSkip (Int bitDepth, Pel* piBlkResi, UInt uiStride, Int* psCoeff, Int width, Int height );
 
-  Void signBitHidingHDQ( TComDataCU* pcCU, TCoeff* pQCoef, TCoeff* pCoef, UInt const *scan, Int* deltaU, Int width, Int height );
+  Void signBitHidingHDQ( TCoeff* pQCoef, TCoeff* pCoef, UInt const *scan, Int* deltaU, Int width, Int height );
 
   // quantization
   Void xQuant( TComDataCU* pcCU, 
@@ -281,13 +271,6 @@ __inline UInt              xGetCodedLevel  ( Double&                         rd6
                                              Int                             iQBits,
                                              Double                          dTemp,
                                              Bool                            bLast        ) const;
-  __inline Double xGetICRateCost   ( UInt                            uiAbsLevel,
-                                     UShort                          ui16CtxNumOne,
-                                     UShort                          ui16CtxNumAbs,
-                                     UShort                          ui16AbsGoRice 
-                                   , UInt                            c1Idx,
-                                     UInt                            c2Idx
-                                     ) const;
 __inline Int xGetICRate  ( UInt                            uiAbsLevel,
                            UShort                          ui16CtxNumOne,
                            UShort                          ui16CtxNumAbs,
@@ -296,8 +279,7 @@ __inline Int xGetICRate  ( UInt                            uiAbsLevel,
                            UInt                            c2Idx
                          ) const;
   __inline Double xGetRateLast     ( const UInt                      uiPosX,
-                                     const UInt                      uiPosY,
-                                     const UInt                      uiBlkWdth     ) const;
+                                     const UInt                      uiPosY ) const;
   __inline Double xGetRateSigCoeffGroup (  UShort                    uiSignificanceCoeffGroup,
                                      UShort                          ui16CtxNumSig ) const;
   __inline Double xGetRateSigCoef (  UShort                          uiSignificance,
