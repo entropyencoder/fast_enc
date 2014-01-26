@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -234,13 +234,17 @@ Bool WeightPredAnalysis::xUpdatingWPParameters(TComSlice *slice, wpScalingParam 
         Int weight = (Int)( 0.5 + dWeight * (Double)(1<<log2Denom) );
         Int offset = (Int)( ((currDC<<log2Denom) - ((Int64)weight * refDC) + (Int64)realOffset) >> realLog2Denom );
 
-        // Chroma offset range limination
+        // Chroma offset range limitation
         if(comp)
         {
-          Int shift = 1 << (g_bitDepthC - 1);
-          Int pred = ( shift - ( ( shift*weight)>>(log2Denom) ) );
+          Int pred = ( 128 - ( ( 128*weight)>>(log2Denom) ) );
           Int deltaOffset = Clip3( -512, 511, (offset - pred) );    // signed 10bit
           offset = Clip3( -128, 127, (deltaOffset + pred) );        // signed 8bit
+        }
+        // Luma offset range limitation
+        else
+        {
+          offset = Clip3( -128, 127, offset);
         }
 
         // Weighting factor limitation

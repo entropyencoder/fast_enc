@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,10 +51,8 @@ struct GOPEntry
   Int m_POC;
   Int m_QPOffset;
   Double m_QPFactor;
-#if VARYING_DBL_PARAMS
   Int m_tcOffsetDiv2;
   Int m_betaOffsetDiv2;
-#endif
   Int m_temporalId;
   Bool m_refPic;
   Int m_numRefPicsActive;
@@ -74,10 +72,8 @@ struct GOPEntry
   : m_POC(-1)
   , m_QPOffset(0)
   , m_QPFactor(0)
-#if VARYING_DBL_PARAMS
   , m_tcOffsetDiv2(0)
   , m_betaOffsetDiv2(0)
-#endif
   , m_temporalId(0)
   , m_refPic(false)
   , m_numRefPicsActive(0)
@@ -110,15 +106,19 @@ protected:
   Int       m_FrameSkip;
   Int       m_iSourceWidth;
   Int       m_iSourceHeight;
-  Int       m_croppingMode;
-  CroppingWindow m_picCroppingWindow;
-  Int       m_iFrameToBeEncoded;
+  Int       m_conformanceMode;
+  Window    m_conformanceWindow;
+  Int       m_framesToBeEncoded;
   Double    m_adLambdaModifier[ MAX_TLAYER ];
 
   /* profile & level */
   Profile::Name m_profile;
   Level::Tier   m_levelTier;
   Level::Name   m_level;
+  Bool m_progressiveSourceFlag;
+  Bool m_interlacedSourceFlag;
+  Bool m_nonPackedConstraintFlag;
+  Bool m_frameOnlyConstraintFlag;
 
   //====== Coding Structure ========
   UInt      m_uiIntraPeriod;
@@ -151,13 +151,10 @@ protected:
   Int       m_loopFilterBetaOffsetDiv2;
   Int       m_loopFilterTcOffsetDiv2;
   Bool      m_DeblockingFilterControlPresent;
+  Bool      m_DeblockingFilterMetric;
   Bool      m_bUseSAO;
   Int       m_maxNumOffsetsPerPic;
   Bool      m_saoLcuBoundary;
-  Bool      m_saoLcuBasedOptimization;
-
-  //====== Lossless ========
-  Bool      m_useLossless;
   //====== Motion search ========
   Int       m_iFastSearch;                      //  0:Full search  1:Diamond  2:PMVFAST
   Int       m_iSearchRange;                     //  0:Full frame
@@ -178,14 +175,11 @@ protected:
   Int       m_iQPAdaptationRange;
   
   //====== Tool list ========
-  Bool      m_bUseSBACRD;
   Bool      m_bUseASR;
   Bool      m_bUseHADME;
-  Bool      m_bUseLComb;
   Bool      m_useRDOQ;
-#if RDOQ_TRANSFORMSKIP
   Bool      m_useRDOQTS;
-#endif
+  UInt      m_rdPenalty;
   Bool      m_bUseFastEnc;
   Bool      m_bUseEarlyCU;
   Bool      m_useFastDecisionForMerge;
@@ -201,14 +195,11 @@ protected:
   UInt      m_pcmLog2MaxSize;
   UInt      m_uiPCMLog2MinSize;
   //====== Slice ========
-  Int       m_iSliceMode;
-  Int       m_iSliceArgument; 
+  Int       m_sliceMode;
+  Int       m_sliceArgument; 
   //====== Dependent Slice ========
-  Int       m_iDependentSliceMode;
-  Int       m_iDependentSliceArgument;
-#if DEPENDENT_SLICES
-  Bool      m_entropySliceEnabledFlag;
-#endif
+  Int       m_sliceSegmentMode;
+  Int       m_sliceSegmentArgument;
   Bool      m_bLFCrossSliceBoundaryFlag;
 
   Bool      m_bPCMInputBitDepthFlag;
@@ -229,14 +220,44 @@ protected:
   Int       m_bufferingPeriodSEIEnabled;
   Int       m_pictureTimingSEIEnabled;
   Int       m_recoveryPointSEIEnabled;
-#if SEI_DISPLAY_ORIENTATION
+  Bool      m_toneMappingInfoSEIEnabled;
+  Int       m_toneMapId;
+  Bool      m_toneMapCancelFlag;
+  Bool      m_toneMapPersistenceFlag;
+  Int       m_codedDataBitDepth;
+  Int       m_targetBitDepth;
+  Int       m_modelId; 
+  Int       m_minValue;
+  Int       m_maxValue;
+  Int       m_sigmoidMidpoint;
+  Int       m_sigmoidWidth;
+  Int       m_numPivots;
+  Int       m_cameraIsoSpeedIdc;
+  Int       m_cameraIsoSpeedValue;
+  Int       m_exposureCompensationValueSignFlag;
+  Int       m_exposureCompensationValueNumerator;
+  Int       m_exposureCompensationValueDenomIdc;
+  Int       m_refScreenLuminanceWhite;
+  Int       m_extendedRangeWhiteLevel;
+  Int       m_nominalBlackLevelLumaCodeValue;
+  Int       m_nominalWhiteLevelLumaCodeValue;
+  Int       m_extendedWhiteLevelLumaCodeValue;
+  Int*      m_startOfCodedInterval;
+  Int*      m_codedPivotValue;
+  Int*      m_targetPivotValue;
+  Int       m_framePackingSEIEnabled;
+  Int       m_framePackingSEIType;
+  Int       m_framePackingSEIId;
+  Int       m_framePackingSEIQuincunx;
+  Int       m_framePackingSEIInterpretation;
   Int       m_displayOrientationSEIAngle;
-#endif
-#if SEI_TEMPORAL_LEVEL0_INDEX
   Int       m_temporalLevel0IndexSEIEnabled;
-#endif
+  Int       m_gradualDecodingRefreshInfoEnabled;
+  Int       m_decodingUnitInfoSEIEnabled;
+  Int       m_SOPDescriptionSEIEnabled;
+  Int       m_scalableNestingSEIEnabled;
   //====== Weighted Prediction ========
-  Bool      m_bUseWeightPred;       //< Use of Weighting Prediction (P_SLICE)
+  Bool      m_useWeightedPred;       //< Use of Weighting Prediction (P_SLICE)
   Bool      m_useWeightedBiPred;    //< Use of Bi-directional Weighting Prediction (B_SLICE)
   UInt      m_log2ParallelMergeLevelMinus2;       ///< Parallel merge estimation region
   UInt      m_maxNumMergeCand;                    ///< Maximum number of merge candidates
@@ -244,22 +265,16 @@ protected:
   Char*     m_scalingListFile;          ///< quantization matrix file name
   Int       m_TMVPModeId;
   Int       m_signHideFlag;
-#if RATE_CONTROL_LAMBDA_DOMAIN
   Bool      m_RCEnableRateControl;
   Int       m_RCTargetBitrate;
-  Bool      m_RCKeepHierarchicalBit;
+  Int       m_RCKeepHierarchicalBit;
   Bool      m_RCLCULevelRC;
   Bool      m_RCUseLCUSeparateModel;
   Int       m_RCInitialQP;
   Bool      m_RCForceIntraQP;
-#else
-  Bool      m_enableRateCtrl;                                ///< Flag for using rate control algorithm
-  Int       m_targetBitrate;                                 ///< target bitrate
-  Int       m_numLCUInUnit;                                  ///< Total number of LCUs in a frame should be divided by the NumLCUInUnit
-#endif
   Bool      m_TransquantBypassEnableFlag;                     ///< transquant_bypass_enable_flag setting in PPS.
-  Bool      m_CUTransquantBypassFlagValue;                    ///< if transquant_bypass_enable_flag, the fixed value to use for the per-CU cu_transquant_bypass_flag.
-  TComVPS                    m_cVPS;
+  Bool      m_CUTransquantBypassFlagForce;                    ///< if transquant_bypass_enable_flag, then, if true, all CU transquant bypass flags will be set to true.
+  TComVPS   m_cVPS;
   Bool      m_recalculateQPAccordingToLambda;                 ///< recalculate QP value according to the lambda value
   Int       m_activeParameterSetsSEIEnabled;                  ///< enable active parameter set SEI message 
   Bool      m_vuiParametersPresentFlag;                       ///< enable generation of VUI parameters
@@ -268,7 +283,7 @@ protected:
   Int       m_sarWidth;                                       ///< horizontal size of the sample aspect ratio
   Int       m_sarHeight;                                      ///< vertical size of the sample aspect ratio
   Bool      m_overscanInfoPresentFlag;                        ///< Signals whether overscan_appropriate_flag is present
-  Bool      m_overscanAppropriateFlag;                        ///< Indicates whether cropped decoded pictures are suitable for display using overscan
+  Bool      m_overscanAppropriateFlag;                        ///< Indicates whether conformant decoded pictures are suitable for display using overscan
   Bool      m_videoSignalTypePresentFlag;                     ///< Signals whether video_format, video_full_range_flag, and colour_description_present_flag are present
   Int       m_videoFormat;                                    ///< Indicates representation of pictures
   Bool      m_videoFullRangeFlag;                             ///< Indicates the black level and range of luma and chroma signals
@@ -280,20 +295,20 @@ protected:
   Int       m_chromaSampleLocTypeTopField;                    ///< Specifies the location of chroma samples for top field
   Int       m_chromaSampleLocTypeBottomField;                 ///< Specifies the location of chroma samples for bottom field
   Bool      m_neutralChromaIndicationFlag;                    ///< Indicates that the value of all decoded chroma samples is equal to 1<<(BitDepthCr-1)
+  Window    m_defaultDisplayWindow;                           ///< Represents the default display window parameters
+  Bool      m_frameFieldInfoPresentFlag;                      ///< Indicates that pic_struct and other field coding related values are present in picture timing SEI messages
+  Bool      m_pocProportionalToTimingFlag;                    ///< Indicates that the POC value is proportional to the output time w.r.t. first picture in CVS
+  Int       m_numTicksPocDiffOneMinus1;                       ///< Number of ticks minus 1 that for a POC difference of one
   Bool      m_bitstreamRestrictionFlag;                       ///< Signals whether bitstream restriction parameters are present
   Bool      m_tilesFixedStructureFlag;                        ///< Indicates that each active picture parameter set has the same values of the syntax elements related to tiles
   Bool      m_motionVectorsOverPicBoundariesFlag;             ///< Indicates that no samples outside the picture boundaries are used for inter prediction
-#if MIN_SPATIAL_SEGMENTATION
   Int       m_minSpatialSegmentationIdc;                      ///< Indicates the maximum size of the spatial segments in the pictures in the coded video sequence
-#endif
   Int       m_maxBytesPerPicDenom;                            ///< Indicates a number of bytes not exceeded by the sum of the sizes of the VCL NAL units associated with any coded picture
   Int       m_maxBitsPerMinCuDenom;                           ///< Indicates an upper bound for the number of bits of coding_unit() data
   Int       m_log2MaxMvLengthHorizontal;                      ///< Indicate the maximum absolute value of a decoded horizontal MV component in quarter-pel luma units
   Int       m_log2MaxMvLengthVertical;                        ///< Indicate the maximum absolute value of a decoded vertical MV component in quarter-pel luma units
 
-#if STRONG_INTRA_SMOOTHING
   Bool      m_useStrongIntraSmoothing;                        ///< enable the use of strong intra smoothing (bi_linear interpolation) for 32x32 blocks when reference samples are flat.
-#endif
 
 public:
   TEncCfg()
@@ -315,10 +330,10 @@ public:
   Void      setSourceWidth                  ( Int   i )      { m_iSourceWidth = i; }
   Void      setSourceHeight                 ( Int   i )      { m_iSourceHeight = i; }
 
-  CroppingWindow &getPicCroppingWindow()                                                     { return m_picCroppingWindow; }
-  Void      setPicCroppingWindow (Int cropLeft, Int cropRight, Int cropTop, Int cropBottom ) { m_picCroppingWindow.setPicCropping (cropLeft, cropRight, cropTop, cropBottom); }
+  Window   &getConformanceWindow()                           { return m_conformanceWindow; }
+  Void      setConformanceWindow (Int confLeft, Int confRight, Int confTop, Int confBottom ) { m_conformanceWindow.setWindow (confLeft, confRight, confTop, confBottom); }
 
-  Void      setFrameToBeEncoded             ( Int   i )      { m_iFrameToBeEncoded = i; }
+  Void      setFramesToBeEncoded            ( Int   i )      { m_framesToBeEncoded = i; }
   
   //====== Coding Structure ========
   Void      setIntraPeriod                  ( Int   i )      { m_uiIntraPeriod = (UInt)i; }
@@ -353,6 +368,7 @@ public:
   Void      setLoopFilterBetaOffset         ( Int   i )      { m_loopFilterBetaOffsetDiv2  = i; }
   Void      setLoopFilterTcOffset           ( Int   i )      { m_loopFilterTcOffsetDiv2    = i; }
   Void      setDeblockingFilterControlPresent ( Bool b ) { m_DeblockingFilterControlPresent = b; }
+  Void      setDeblockingFilterMetric       ( Bool  b )      { m_DeblockingFilterMetric = b; }
 
   //====== Motion search ========
   Void      setFastSearch                   ( Int   i )      { m_iFastSearch = i; }
@@ -374,14 +390,12 @@ public:
   Void      setUseAdaptiveQP                ( Bool  b )      { m_bUseAdaptiveQP = b; }
   Void      setQPAdaptationRange            ( Int   i )      { m_iQPAdaptationRange = i; }
   
-  //====== Lossless ========
-  Void      setUseLossless                  (Bool    b  )        { m_useLossless = b;  }
   //====== Sequence ========
   Int       getFrameRate                    ()      { return  m_iFrameRate; }
   UInt      getFrameSkip                    ()      { return  m_FrameSkip; }
   Int       getSourceWidth                  ()      { return  m_iSourceWidth; }
   Int       getSourceHeight                 ()      { return  m_iSourceHeight; }
-  Int       getFrameToBeEncoded             ()      { return  m_iFrameToBeEncoded; }
+  Int       getFramesToBeEncoded            ()      { return  m_framesToBeEncoded; }
   void setLambdaModifier                    ( UInt uiIndex, Double dValue ) { m_adLambdaModifier[ uiIndex ] = dValue; }
   Double getLambdaModifier                  ( UInt uiIndex ) const { return m_adLambdaModifier[ uiIndex ]; }
 
@@ -407,6 +421,7 @@ public:
   Int       getLoopFilterBetaOffset         ()      { return m_loopFilterBetaOffsetDiv2; }
   Int       getLoopFilterTcOffset           ()      { return m_loopFilterTcOffsetDiv2; }
   Bool      getDeblockingFilterControlPresent()  { return  m_DeblockingFilterControlPresent; }
+  Bool      getDeblockingFilterMetric       ()      { return m_DeblockingFilterMetric; }
 
   //==== Motion search ========
   Int       getFastSearch                   ()      { return  m_iFastSearch; }
@@ -417,18 +432,13 @@ public:
   Int       getMaxCuDQPDepth                ()      { return  m_iMaxCuDQPDepth; }
   Bool      getUseAdaptiveQP                ()      { return  m_bUseAdaptiveQP; }
   Int       getQPAdaptationRange            ()      { return  m_iQPAdaptationRange; }
-  //====== Lossless ========
-  Bool      getUseLossless                  ()      { return  m_useLossless;  }
   
   //==== Tool list ========
-  Void      setUseSBACRD                    ( Bool  b )     { m_bUseSBACRD  = b; }
   Void      setUseASR                       ( Bool  b )     { m_bUseASR     = b; }
   Void      setUseHADME                     ( Bool  b )     { m_bUseHADME   = b; }
-  Void      setUseLComb                     ( Bool  b )     { m_bUseLComb   = b; }
   Void      setUseRDOQ                      ( Bool  b )     { m_useRDOQ    = b; }
-#if RDOQ_TRANSFORMSKIP
   Void      setUseRDOQTS                    ( Bool  b )     { m_useRDOQTS  = b; }
-#endif
+  Void      setRDpenalty                 ( UInt  b )     { m_rdPenalty  = b; }
   Void      setUseFastEnc                   ( Bool  b )     { m_bUseFastEnc = b; }
   Void      setUseEarlyCU                   ( Bool  b )     { m_bUseEarlyCU = b; }
   Void      setUseFastDecisionForMerge      ( Bool  b )     { m_useFastDecisionForMerge = b; }
@@ -442,14 +452,11 @@ public:
   Void      setPCMLog2MinSize               ( UInt u )     { m_uiPCMLog2MinSize = u;      }
   Void      setdQPs                         ( Int*  p )     { m_aidQP       = p; }
   Void      setDeltaQpRD                    ( UInt  u )     {m_uiDeltaQpRD  = u; }
-  Bool      getUseSBACRD                    ()      { return m_bUseSBACRD;  }
   Bool      getUseASR                       ()      { return m_bUseASR;     }
   Bool      getUseHADME                     ()      { return m_bUseHADME;   }
-  Bool      getUseLComb                     ()      { return m_bUseLComb;   }
   Bool      getUseRDOQ                      ()      { return m_useRDOQ;    }
-#if RDOQ_TRANSFORMSKIP
   Bool      getUseRDOQTS                    ()      { return m_useRDOQTS;  }
-#endif
+  Int      getRDpenalty                  ()      { return m_rdPenalty;  }
   Bool      getUseFastEnc                   ()      { return m_bUseFastEnc; }
   Bool      getUseEarlyCU                   ()      { return m_bUseEarlyCU; }
   Bool      getUseFastDecisionForMerge      ()      { return m_useFastDecisionForMerge; }
@@ -470,19 +477,15 @@ public:
   UInt      getDeltaQpRD                    ()      { return m_uiDeltaQpRD; }
 
   //====== Slice ========
-  Void  setSliceMode                   ( Int  i )       { m_iSliceMode = i;              }
-  Void  setSliceArgument               ( Int  i )       { m_iSliceArgument = i;          }
-  Int   getSliceMode                   ()              { return m_iSliceMode;           }
-  Int   getSliceArgument               ()              { return m_iSliceArgument;       }
+  Void  setSliceMode                   ( Int  i )       { m_sliceMode = i;              }
+  Void  setSliceArgument               ( Int  i )       { m_sliceArgument = i;          }
+  Int   getSliceMode                   ()              { return m_sliceMode;           }
+  Int   getSliceArgument               ()              { return m_sliceArgument;       }
   //====== Dependent Slice ========
-  Void  setDependentSliceMode            ( Int  i )      { m_iDependentSliceMode = i;       }
-  Void  setDependentSliceArgument        ( Int  i )      { m_iDependentSliceArgument = i;   }
-  Int   getDependentSliceMode            ()              { return m_iDependentSliceMode;    }
-  Int   getDependentSliceArgument        ()              { return m_iDependentSliceArgument;}
-#if DEPENDENT_SLICES && !REMOVE_ENTROPY_SLICES
-  Void  setEntropySliceEnabledFlag       ( Bool  b )     { m_entropySliceEnabledFlag = b;    }
-  Bool  getEntropySliceEnabledFlag       ()              { return m_entropySliceEnabledFlag; }
-#endif
+  Void  setSliceSegmentMode            ( Int  i )      { m_sliceSegmentMode = i;       }
+  Void  setSliceSegmentArgument        ( Int  i )      { m_sliceSegmentArgument = i;   }
+  Int   getSliceSegmentMode            ()              { return m_sliceSegmentMode;    }
+  Int   getSliceSegmentArgument        ()              { return m_sliceSegmentArgument;}
   Void      setLFCrossSliceBoundaryFlag     ( Bool   bValue  )    { m_bLFCrossSliceBoundaryFlag = bValue; }
   Bool      getLFCrossSliceBoundaryFlag     ()                    { return m_bLFCrossSliceBoundaryFlag;   }
 
@@ -492,15 +495,12 @@ public:
   Int   getMaxNumOffsetsPerPic                   ()                    { return m_maxNumOffsetsPerPic; }
   Void  setSaoLcuBoundary              (Bool val)      { m_saoLcuBoundary = val; }
   Bool  getSaoLcuBoundary              ()              { return m_saoLcuBoundary; }
-  Void  setSaoLcuBasedOptimization               (Bool val)            { m_saoLcuBasedOptimization = val; }
-  Bool  getSaoLcuBasedOptimization               ()                    { return m_saoLcuBasedOptimization; }
   Void  setLFCrossTileBoundaryFlag               ( Bool   val  )       { m_loopFilterAcrossTilesEnabledFlag = val; }
   Bool  getLFCrossTileBoundaryFlag               ()                    { return m_loopFilterAcrossTilesEnabledFlag;   }
   Void  setUniformSpacingIdr           ( Int i )           { m_iUniformSpacingIdr = i; }
   Int   getUniformSpacingIdr           ()                  { return m_iUniformSpacingIdr; }
   Void  setNumColumnsMinus1            ( Int i )           { m_iNumColumnsMinus1 = i; }
   Int   getNumColumnsMinus1            ()                  { return m_iNumColumnsMinus1; }
-#if MIN_SPATIAL_SEGMENTATION
   Void  setColumnWidth ( UInt* columnWidth )
   {
     if( m_iUniformSpacingIdr == 0 && m_iNumColumnsMinus1 > 0 )
@@ -515,42 +515,9 @@ public:
       }
     }
   }
-#else
-  Void  setColumnWidth ( Char* str )
-  {
-    Char *columnWidth;
-    Int  i=0;
-    Int  m_iWidthInCU = ( m_iSourceWidth%g_uiMaxCUWidth ) ? m_iSourceWidth/g_uiMaxCUWidth + 1 : m_iSourceWidth/g_uiMaxCUWidth;
-
-    if( m_iUniformSpacingIdr == 0 && m_iNumColumnsMinus1 > 0 )
-    {
-      m_puiColumnWidth = new UInt[m_iNumColumnsMinus1];
-
-      columnWidth = strtok(str, " ,-");
-      while(columnWidth!=NULL)
-      {
-        if( i>=m_iNumColumnsMinus1 )
-        {
-          printf( "The number of columns whose width are defined is larger than the allowed number of columns.\n" );
-          exit( EXIT_FAILURE );
-        }
-        *( m_puiColumnWidth + i ) = atoi( columnWidth );
-        printf("col: m_iWidthInCU= %4d i=%4d width= %4d\n",m_iWidthInCU,i,m_puiColumnWidth[i]); //AFU
-        columnWidth = strtok(NULL, " ,-");
-        i++;
-      }
-      if( i<m_iNumColumnsMinus1 )
-      {
-        printf( "The width of some columns is not defined.\n" );
-        exit( EXIT_FAILURE );
-      }
-    }
-  }
-#endif
   UInt  getColumnWidth                 ( UInt columnidx )  { return *( m_puiColumnWidth + columnidx ); }
   Void  setNumRowsMinus1               ( Int i )           { m_iNumRowsMinus1 = i; }
   Int   getNumRowsMinus1               ()                  { return m_iNumRowsMinus1; }
-#if MIN_SPATIAL_SEGMENTATION
   Void  setRowHeight (UInt* rowHeight)
   {
     if( m_iUniformSpacingIdr == 0 && m_iNumRowsMinus1 > 0 )
@@ -565,38 +532,6 @@ public:
       }
     }
   }
-#else
-  Void  setRowHeight (Char* str)
-  {
-    Char *rowHeight;
-    Int  i=0;
-    Int  m_iHeightInCU = ( m_iSourceHeight%g_uiMaxCUHeight ) ? m_iSourceHeight/g_uiMaxCUHeight + 1 : m_iSourceHeight/g_uiMaxCUHeight;
-
-    if( m_iUniformSpacingIdr == 0 && m_iNumRowsMinus1 > 0 )
-    {
-      m_puiRowHeight = new UInt[m_iNumRowsMinus1];
-
-      rowHeight = strtok(str, " ,-");
-      while(rowHeight!=NULL)
-      {
-        if( i>=m_iNumRowsMinus1 )
-        {
-          printf( "The number of rows whose height are defined is larger than the allowed number of rows.\n" );
-          exit( EXIT_FAILURE );
-        }
-        *( m_puiRowHeight + i ) = atoi( rowHeight );
-        printf("row: m_iHeightInCU=%4d i=%4d height=%4d\n",m_iHeightInCU,i,m_puiRowHeight[i]); //AFU
-        rowHeight = strtok(NULL, " ,-");
-        i++;
-      }
-      if( i<m_iNumRowsMinus1 )
-      {
-        printf( "The height of some rows is not defined.\n" );
-        exit( EXIT_FAILURE );
-     }
-    }
-  }
-#endif
   UInt  getRowHeight                   ( UInt rowIdx )     { return *( m_puiRowHeight + rowIdx ); }
   Void  xCheckGSParameters();
   Void  setWaveFrontSynchro(Int iWaveFrontSynchro)       { m_iWaveFrontSynchro = iWaveFrontSynchro; }
@@ -611,17 +546,81 @@ public:
   Int   getPictureTimingSEIEnabled()                     { return m_pictureTimingSEIEnabled; }
   Void  setRecoveryPointSEIEnabled(Int b)                { m_recoveryPointSEIEnabled = b; }
   Int   getRecoveryPointSEIEnabled()                     { return m_recoveryPointSEIEnabled; }
-#if SEI_DISPLAY_ORIENTATION
+  Void  setToneMappingInfoSEIEnabled(Bool b)                 {  m_toneMappingInfoSEIEnabled = b;  }
+  Bool  getToneMappingInfoSEIEnabled()                       {  return m_toneMappingInfoSEIEnabled;  }
+  Void  setTMISEIToneMapId(Int b)                            {  m_toneMapId = b;  }
+  Int   getTMISEIToneMapId()                                 {  return m_toneMapId;  }
+  Void  setTMISEIToneMapCancelFlag(Bool b)                   {  m_toneMapCancelFlag=b;  }
+  Bool  getTMISEIToneMapCancelFlag()                         {  return m_toneMapCancelFlag;  }
+  Void  setTMISEIToneMapPersistenceFlag(Bool b)              {  m_toneMapPersistenceFlag = b;  }
+  Bool   getTMISEIToneMapPersistenceFlag()                   {  return m_toneMapPersistenceFlag;  }
+  Void  setTMISEICodedDataBitDepth(Int b)                    {  m_codedDataBitDepth = b;  }
+  Int   getTMISEICodedDataBitDepth()                         {  return m_codedDataBitDepth;  }
+  Void  setTMISEITargetBitDepth(Int b)                       {  m_targetBitDepth = b;  }
+  Int   getTMISEITargetBitDepth()                            {  return m_targetBitDepth;  }
+  Void  setTMISEIModelID(Int b)                              {  m_modelId = b;  }
+  Int   getTMISEIModelID()                                   {  return m_modelId;  }
+  Void  setTMISEIMinValue(Int b)                             {  m_minValue = b;  }
+  Int   getTMISEIMinValue()                                  {  return m_minValue;  }
+  Void  setTMISEIMaxValue(Int b)                             {  m_maxValue = b;  }
+  Int   getTMISEIMaxValue()                                  {  return m_maxValue;  }
+  Void  setTMISEISigmoidMidpoint(Int b)                      {  m_sigmoidMidpoint = b;  }
+  Int   getTMISEISigmoidMidpoint()                           {  return m_sigmoidMidpoint;  }
+  Void  setTMISEISigmoidWidth(Int b)                         {  m_sigmoidWidth = b;  }
+  Int   getTMISEISigmoidWidth()                              {  return m_sigmoidWidth;  }
+  Void  setTMISEIStartOfCodedInterva( Int*  p )              {  m_startOfCodedInterval = p;  }
+  Int*  getTMISEIStartOfCodedInterva()                       {  return m_startOfCodedInterval;  }
+  Void  setTMISEINumPivots(Int b)                            {  m_numPivots = b;  }
+  Int   getTMISEINumPivots()                                 {  return m_numPivots;  }
+  Void  setTMISEICodedPivotValue( Int*  p )                  {  m_codedPivotValue = p;  }
+  Int*  getTMISEICodedPivotValue()                           {  return m_codedPivotValue;  }
+  Void  setTMISEITargetPivotValue( Int*  p )                 {  m_targetPivotValue = p;  }
+  Int*  getTMISEITargetPivotValue()                          {  return m_targetPivotValue;  }
+  Void  setTMISEICameraIsoSpeedIdc(Int b)                    {  m_cameraIsoSpeedIdc = b;  }
+  Int   getTMISEICameraIsoSpeedIdc()                         {  return m_cameraIsoSpeedIdc;  }
+  Void  setTMISEICameraIsoSpeedValue(Int b)                  {  m_cameraIsoSpeedValue = b;  }
+  Int   getTMISEICameraIsoSpeedValue()                       {  return m_cameraIsoSpeedValue;  }
+  Void  setTMISEIExposureCompensationValueSignFlag(Int b)    {  m_exposureCompensationValueSignFlag = b;  }
+  Int   getTMISEIExposureCompensationValueSignFlag()         {  return m_exposureCompensationValueSignFlag;  }
+  Void  setTMISEIExposureCompensationValueNumerator(Int b)   {  m_exposureCompensationValueNumerator = b;  }
+  Int   getTMISEIExposureCompensationValueNumerator()        {  return m_exposureCompensationValueNumerator;  }
+  Void  setTMISEIExposureCompensationValueDenomIdc(Int b)    {  m_exposureCompensationValueDenomIdc =b;  }
+  Int   getTMISEIExposureCompensationValueDenomIdc()         {  return m_exposureCompensationValueDenomIdc;  }
+  Void  setTMISEIRefScreenLuminanceWhite(Int b)              {  m_refScreenLuminanceWhite = b;  }
+  Int   getTMISEIRefScreenLuminanceWhite()                   {  return m_refScreenLuminanceWhite;  }
+  Void  setTMISEIExtendedRangeWhiteLevel(Int b)              {  m_extendedRangeWhiteLevel = b;  }
+  Int   getTMISEIExtendedRangeWhiteLevel()                   {  return m_extendedRangeWhiteLevel;  }
+  Void  setTMISEINominalBlackLevelLumaCodeValue(Int b)       {  m_nominalBlackLevelLumaCodeValue = b;  }
+  Int   getTMISEINominalBlackLevelLumaCodeValue()            {  return m_nominalBlackLevelLumaCodeValue;  }
+  Void  setTMISEINominalWhiteLevelLumaCodeValue(Int b)       {  m_nominalWhiteLevelLumaCodeValue = b;  }
+  Int   getTMISEINominalWhiteLevelLumaCodeValue()            {  return m_nominalWhiteLevelLumaCodeValue;  }
+  Void  setTMISEIExtendedWhiteLevelLumaCodeValue(Int b)      {  m_extendedWhiteLevelLumaCodeValue =b;  }
+  Int   getTMISEIExtendedWhiteLevelLumaCodeValue()           {  return m_extendedWhiteLevelLumaCodeValue;  }
+  Void  setFramePackingArrangementSEIEnabled(Int b)      { m_framePackingSEIEnabled = b; }
+  Int   getFramePackingArrangementSEIEnabled()           { return m_framePackingSEIEnabled; }
+  Void  setFramePackingArrangementSEIType(Int b)         { m_framePackingSEIType = b; }
+  Int   getFramePackingArrangementSEIType()              { return m_framePackingSEIType; }
+  Void  setFramePackingArrangementSEIId(Int b)           { m_framePackingSEIId = b; }
+  Int   getFramePackingArrangementSEIId()                { return m_framePackingSEIId; }
+  Void  setFramePackingArrangementSEIQuincunx(Int b)     { m_framePackingSEIQuincunx = b; }
+  Int   getFramePackingArrangementSEIQuincunx()          { return m_framePackingSEIQuincunx; }
+  Void  setFramePackingArrangementSEIInterpretation(Int b)  { m_framePackingSEIInterpretation = b; }
+  Int   getFramePackingArrangementSEIInterpretation()    { return m_framePackingSEIInterpretation; }
   Void  setDisplayOrientationSEIAngle(Int b)             { m_displayOrientationSEIAngle = b; }
   Int   getDisplayOrientationSEIAngle()                  { return m_displayOrientationSEIAngle; }
-#endif
-#if SEI_TEMPORAL_LEVEL0_INDEX
   Void  setTemporalLevel0IndexSEIEnabled(Int b)          { m_temporalLevel0IndexSEIEnabled = b; }
   Int   getTemporalLevel0IndexSEIEnabled()               { return m_temporalLevel0IndexSEIEnabled; }
-#endif
-  Void      setUseWP               ( Bool  b )   { m_bUseWeightPred    = b;    }
+  Void  setGradualDecodingRefreshInfoEnabled(Int b)      { m_gradualDecodingRefreshInfoEnabled = b;    }
+  Int   getGradualDecodingRefreshInfoEnabled()           { return m_gradualDecodingRefreshInfoEnabled; }
+  Void  setDecodingUnitInfoSEIEnabled(Int b)                { m_decodingUnitInfoSEIEnabled = b;    }
+  Int   getDecodingUnitInfoSEIEnabled()                     { return m_decodingUnitInfoSEIEnabled; }
+  Void  setSOPDescriptionSEIEnabled(Int b)                { m_SOPDescriptionSEIEnabled = b; }
+  Int   getSOPDescriptionSEIEnabled()                     { return m_SOPDescriptionSEIEnabled; }
+  Void  setScalableNestingSEIEnabled(Int b)                { m_scalableNestingSEIEnabled = b; }
+  Int   getScalableNestingSEIEnabled()                     { return m_scalableNestingSEIEnabled; }
+  Void      setUseWP               ( Bool b )    { m_useWeightedPred   = b;    }
   Void      setWPBiPred            ( Bool b )    { m_useWeightedBiPred = b;    }
-  Bool      getUseWP               ()            { return m_bUseWeightPred;    }
+  Bool      getUseWP               ()            { return m_useWeightedPred;   }
   Bool      getWPBiPred            ()            { return m_useWeightedBiPred; }
   Void      setLog2ParallelMergeLevelMinus2   ( UInt u )    { m_log2ParallelMergeLevelMinus2       = u;    }
   UInt      getLog2ParallelMergeLevelMinus2   ()            { return m_log2ParallelMergeLevelMinus2;       }
@@ -635,13 +634,12 @@ public:
   Int       getTMVPModeId ()         { return m_TMVPModeId; }
   Void      setSignHideFlag( Int signHideFlag ) { m_signHideFlag = signHideFlag; }
   Int       getSignHideFlag()                    { return m_signHideFlag; }
-#if RATE_CONTROL_LAMBDA_DOMAIN
   Bool      getUseRateCtrl         ()              { return m_RCEnableRateControl;   }
   Void      setUseRateCtrl         ( Bool b )      { m_RCEnableRateControl = b;      }
   Int       getTargetBitrate       ()              { return m_RCTargetBitrate;       }
   Void      setTargetBitrate       ( Int bitrate ) { m_RCTargetBitrate  = bitrate;   }
-  Bool      getKeepHierBit         ()              { return m_RCKeepHierarchicalBit; }
-  Void      setKeepHierBit         ( Bool b )      { m_RCKeepHierarchicalBit = b;    }
+  Int       getKeepHierBit         ()              { return m_RCKeepHierarchicalBit; }
+  Void      setKeepHierBit         ( Int i )       { m_RCKeepHierarchicalBit = i;    }
   Bool      getLCULevelRC          ()              { return m_RCLCULevelRC; }
   Void      setLCULevelRC          ( Bool b )      { m_RCLCULevelRC = b; }
   Bool      getUseLCUSeparateModel ()              { return m_RCUseLCUSeparateModel; }
@@ -650,27 +648,17 @@ public:
   Void      setInitialQP           ( Int QP )      { m_RCInitialQP = QP;             }
   Bool      getForceIntraQP        ()              { return m_RCForceIntraQP;        }
   Void      setForceIntraQP        ( Bool b )      { m_RCForceIntraQP = b;           }
-#else
-  Bool      getUseRateCtrl    ()                { return m_enableRateCtrl;    }
-  Void      setUseRateCtrl    (Bool flag)       { m_enableRateCtrl = flag;    }
-  Int       getTargetBitrate  ()                { return m_targetBitrate;     }
-  Void      setTargetBitrate  (Int target)      { m_targetBitrate  = target;  }
-  Int       getNumLCUInUnit   ()                { return m_numLCUInUnit;      }
-  Void      setNumLCUInUnit   (Int numLCUs)     { m_numLCUInUnit   = numLCUs; }
-#endif
   Bool      getTransquantBypassEnableFlag()           { return m_TransquantBypassEnableFlag; }
   Void      setTransquantBypassEnableFlag(Bool flag)  { m_TransquantBypassEnableFlag = flag; }
-  Bool      getCUTransquantBypassFlagValue()          { return m_CUTransquantBypassFlagValue; }
-  Void      setCUTransquantBypassFlagValue(Bool flag) { m_CUTransquantBypassFlagValue = flag; }
+  Bool      getCUTransquantBypassFlagForceValue()          { return m_CUTransquantBypassFlagForce; }
+  Void      setCUTransquantBypassFlagForceValue(Bool flag) { m_CUTransquantBypassFlagForce = flag; }
   Void setVPS(TComVPS *p) { m_cVPS = *p; }
   TComVPS *getVPS() { return &m_cVPS; }
   Void      setUseRecalculateQPAccordingToLambda ( Bool b ) { m_recalculateQPAccordingToLambda = b;    }
   Bool      getUseRecalculateQPAccordingToLambda ()         { return m_recalculateQPAccordingToLambda; }
 
-#if STRONG_INTRA_SMOOTHING
   Void      setUseStrongIntraSmoothing ( Bool b ) { m_useStrongIntraSmoothing = b;    }
   Bool      getUseStrongIntraSmoothing ()         { return m_useStrongIntraSmoothing; }
-#endif
 
   Void      setActiveParameterSetsSEIEnabled ( Int b )  { m_activeParameterSetsSEIEnabled = b; }  
   Int       getActiveParameterSetsSEIEnabled ()         { return m_activeParameterSetsSEIEnabled; }
@@ -710,16 +698,22 @@ public:
   Void      setChromaSampleLocTypeBottomField(Int i)      { m_chromaSampleLocTypeBottomField = i; }
   Bool      getNeutralChromaIndicationFlag()              { return m_neutralChromaIndicationFlag; }
   Void      setNeutralChromaIndicationFlag(Bool i)        { m_neutralChromaIndicationFlag = i; }
+  Window   &getDefaultDisplayWindow()                     { return m_defaultDisplayWindow; }
+  Void      setDefaultDisplayWindow (Int offsetLeft, Int offsetRight, Int offsetTop, Int offsetBottom ) { m_defaultDisplayWindow.setWindow (offsetLeft, offsetRight, offsetTop, offsetBottom); }
+  Bool      getFrameFieldInfoPresentFlag()                { return m_frameFieldInfoPresentFlag; }
+  Void      setFrameFieldInfoPresentFlag(Bool i)          { m_frameFieldInfoPresentFlag = i; }  
+  Bool      getPocProportionalToTimingFlag()              { return m_pocProportionalToTimingFlag; }
+  Void      setPocProportionalToTimingFlag(Bool x)        { m_pocProportionalToTimingFlag = x;    }
+  Int       getNumTicksPocDiffOneMinus1()                 { return m_numTicksPocDiffOneMinus1;    }
+  Void      setNumTicksPocDiffOneMinus1(Int x)            { m_numTicksPocDiffOneMinus1 = x;       }
   Bool      getBitstreamRestrictionFlag()                 { return m_bitstreamRestrictionFlag; }
   Void      setBitstreamRestrictionFlag(Bool i)           { m_bitstreamRestrictionFlag = i; }
   Bool      getTilesFixedStructureFlag()                  { return m_tilesFixedStructureFlag; }
   Void      setTilesFixedStructureFlag(Bool i)            { m_tilesFixedStructureFlag = i; }
   Bool      getMotionVectorsOverPicBoundariesFlag()       { return m_motionVectorsOverPicBoundariesFlag; }
   Void      setMotionVectorsOverPicBoundariesFlag(Bool i) { m_motionVectorsOverPicBoundariesFlag = i; }
-#if MIN_SPATIAL_SEGMENTATION
   Int       getMinSpatialSegmentationIdc()                { return m_minSpatialSegmentationIdc; }
   Void      setMinSpatialSegmentationIdc(Int i)           { m_minSpatialSegmentationIdc = i; }
-#endif
   Int       getMaxBytesPerPicDenom()                      { return m_maxBytesPerPicDenom; }
   Void      setMaxBytesPerPicDenom(Int i)                 { m_maxBytesPerPicDenom = i; }
   Int       getMaxBitsPerMinCuDenom()                     { return m_maxBitsPerMinCuDenom; }
@@ -728,6 +722,18 @@ public:
   Void      setLog2MaxMvLengthHorizontal(Int i)           { m_log2MaxMvLengthHorizontal = i; }
   Int       getLog2MaxMvLengthVertical()                  { return m_log2MaxMvLengthVertical; }
   Void      setLog2MaxMvLengthVertical(Int i)             { m_log2MaxMvLengthVertical = i; }
+  
+  Bool getProgressiveSourceFlag() const { return m_progressiveSourceFlag; }
+  Void setProgressiveSourceFlag(Bool b) { m_progressiveSourceFlag = b; }
+  
+  Bool getInterlacedSourceFlag() const { return m_interlacedSourceFlag; }
+  Void setInterlacedSourceFlag(Bool b) { m_interlacedSourceFlag = b; }
+  
+  Bool getNonPackedConstraintFlag() const { return m_nonPackedConstraintFlag; }
+  Void setNonPackedConstraintFlag(Bool b) { m_nonPackedConstraintFlag = b; }
+  
+  Bool getFrameOnlyConstraintFlag() const { return m_frameOnlyConstraintFlag; }
+  Void setFrameOnlyConstraintFlag(Bool b) { m_frameOnlyConstraintFlag = b; }
 };
 
 //! \}

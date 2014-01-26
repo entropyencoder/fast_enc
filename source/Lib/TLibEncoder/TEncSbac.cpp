@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,6 @@ TEncSbac::TEncSbac()
 , m_cCUOneSCModel             ( 1,             1,               NUM_ONE_FLAG_CTX              , m_contextModels + m_numContextModels, m_numContextModels)
 , m_cCUAbsSCModel             ( 1,             1,               NUM_ABS_FLAG_CTX              , m_contextModels + m_numContextModels, m_numContextModels)
 , m_cMVPIdxSCModel            ( 1,             1,               NUM_MVP_IDX_CTX               , m_contextModels + m_numContextModels, m_numContextModels)
-, m_cCUAMPSCModel             ( 1,             1,               NUM_CU_AMP_CTX                , m_contextModels + m_numContextModels, m_numContextModels)
 , m_cSaoMergeSCModel          ( 1,             1,               NUM_SAO_MERGE_FLAG_CTX   , m_contextModels + m_numContextModels, m_numContextModels)
 , m_cSaoTypeIdxSCModel        ( 1,             1,               NUM_SAO_TYPE_IDX_CTX          , m_contextModels + m_numContextModels, m_numContextModels)
 , m_cTransformSkipSCModel     ( 1,             2,               NUM_TRANSFORMSKIP_FLAG_CTX    , m_contextModels + m_numContextModels, m_numContextModels)
@@ -111,7 +110,6 @@ Void TEncSbac::resetEntropy           ()
   m_cCUMergeFlagExtSCModel.initBuffer    ( eSliceType, iQp, (UChar*)INIT_MERGE_FLAG_EXT);
   m_cCUMergeIdxExtSCModel.initBuffer     ( eSliceType, iQp, (UChar*)INIT_MERGE_IDX_EXT);
   m_cCUPartSizeSCModel.initBuffer        ( eSliceType, iQp, (UChar*)INIT_PART_SIZE );
-  m_cCUAMPSCModel.initBuffer             ( eSliceType, iQp, (UChar*)INIT_CU_AMP_POS );
   m_cCUPredModeSCModel.initBuffer        ( eSliceType, iQp, (UChar*)INIT_PRED_MODE );
   m_cCUIntraPredSCModel.initBuffer       ( eSliceType, iQp, (UChar*)INIT_INTRA_PRED_MODE );
   m_cCUChromaPredSCModel.initBuffer      ( eSliceType, iQp, (UChar*)INIT_CHROMA_PRED_MODE );
@@ -165,7 +163,6 @@ Void TEncSbac::determineCabacInitIdx()
       curCost += m_cCUMergeFlagExtSCModel.calcCost    ( curSliceType, qp, (UChar*)INIT_MERGE_FLAG_EXT);
       curCost += m_cCUMergeIdxExtSCModel.calcCost     ( curSliceType, qp, (UChar*)INIT_MERGE_IDX_EXT);
       curCost += m_cCUPartSizeSCModel.calcCost        ( curSliceType, qp, (UChar*)INIT_PART_SIZE );
-      curCost += m_cCUAMPSCModel.calcCost             ( curSliceType, qp, (UChar*)INIT_CU_AMP_POS );
       curCost += m_cCUPredModeSCModel.calcCost        ( curSliceType, qp, (UChar*)INIT_PRED_MODE );
       curCost += m_cCUIntraPredSCModel.calcCost       ( curSliceType, qp, (UChar*)INIT_INTRA_PRED_MODE );
       curCost += m_cCUChromaPredSCModel.calcCost      ( curSliceType, qp, (UChar*)INIT_CHROMA_PRED_MODE );
@@ -214,7 +211,6 @@ Void TEncSbac::updateContextTables( SliceType eSliceType, Int iQp, Bool bExecute
   m_cCUMergeFlagExtSCModel.initBuffer    ( eSliceType, iQp, (UChar*)INIT_MERGE_FLAG_EXT);
   m_cCUMergeIdxExtSCModel.initBuffer     ( eSliceType, iQp, (UChar*)INIT_MERGE_IDX_EXT);
   m_cCUPartSizeSCModel.initBuffer        ( eSliceType, iQp, (UChar*)INIT_PART_SIZE );
-  m_cCUAMPSCModel.initBuffer             ( eSliceType, iQp, (UChar*)INIT_CU_AMP_POS );
   m_cCUPredModeSCModel.initBuffer        ( eSliceType, iQp, (UChar*)INIT_PRED_MODE );
   m_cCUIntraPredSCModel.initBuffer       ( eSliceType, iQp, (UChar*)INIT_INTRA_PRED_MODE );
   m_cCUChromaPredSCModel.initBuffer      ( eSliceType, iQp, (UChar*)INIT_CHROMA_PRED_MODE );
@@ -277,11 +273,6 @@ Void TEncSbac::codeTerminatingBit( UInt uilsLast )
 Void TEncSbac::codeSliceFinish()
 {
   m_pcBinIf->finish();
-}
-
-Void TEncSbac::encodeStart()
-{
-  m_pcBinIf->start();
 }
 
 Void TEncSbac::xWriteUnarySymbol( UInt uiSymbol, ContextModel* pcSCModel, Int iOffset )
@@ -446,11 +437,11 @@ Void TEncSbac::codePartSize( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth )
       {
         if (eSize == SIZE_2NxN)
         {
-          m_pcBinIf->encodeBin(1, m_cCUAMPSCModel.get( 0, 0, 0 ));
+          m_pcBinIf->encodeBin(1, m_cCUPartSizeSCModel.get( 0, 0, 3 ));
         }
         else
         {
-          m_pcBinIf->encodeBin(0, m_cCUAMPSCModel.get( 0, 0, 0 ));          
+          m_pcBinIf->encodeBin(0, m_cCUPartSizeSCModel.get( 0, 0, 3 ));
           m_pcBinIf->encodeBinEP((eSize == SIZE_2NxnU? 0: 1));
         }
       }
@@ -470,11 +461,11 @@ Void TEncSbac::codePartSize( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth )
       {
         if (eSize == SIZE_Nx2N)
         {
-          m_pcBinIf->encodeBin(1, m_cCUAMPSCModel.get( 0, 0, 0 ));
+          m_pcBinIf->encodeBin(1, m_cCUPartSizeSCModel.get( 0, 0, 3 ));
         }
         else
         {
-          m_pcBinIf->encodeBin(0, m_cCUAMPSCModel.get( 0, 0, 0 ));
+          m_pcBinIf->encodeBin(0, m_cCUPartSizeSCModel.get( 0, 0, 3 ));
           m_pcBinIf->encodeBinEP((eSize == SIZE_nLx2N? 0: 1));
         }
       }
@@ -845,7 +836,7 @@ Void TEncSbac::codeQtCbf( TComDataCU* pcCU, UInt uiAbsPartIdx, TextType eType, U
   DTRACE_CABAC_T( "\n" )
 }
 
-void TEncSbac::codeTransformSkipFlags (TComDataCU* pcCU, UInt uiAbsPartIdx, UInt width, UInt height, UInt uiDepth, TextType eTType )
+void TEncSbac::codeTransformSkipFlags (TComDataCU* pcCU, UInt uiAbsPartIdx, UInt width, UInt height, TextType eTType )
 {
   if (pcCU->getCUTransquantBypass(uiAbsPartIdx))
   {
@@ -871,48 +862,22 @@ void TEncSbac::codeTransformSkipFlags (TComDataCU* pcCU, UInt uiAbsPartIdx, UInt
   DTRACE_CABAC_T( "\n" )
 }
 
-#if !REMOVE_BURST_IPCM
-/** Code I_PCM information. 
- * \param pcCU pointer to CU
- * \param uiAbsPartIdx CU index
- * \param numIPCM the number of succesive IPCM blocks with the same size 
- * \param firstIPCMFlag 
- * \returns Void
- */
-Void TEncSbac::codeIPCMInfo( TComDataCU* pcCU, UInt uiAbsPartIdx, Int numIPCM, Bool firstIPCMFlag)
-#else
-/** Code I_PCM information. 
+/** Code I_PCM information.
  * \param pcCU pointer to CU
  * \param uiAbsPartIdx CU index
  * \returns Void
  */
 Void TEncSbac::codeIPCMInfo( TComDataCU* pcCU, UInt uiAbsPartIdx )
-#endif
 {
   UInt uiIPCM = (pcCU->getIPCMFlag(uiAbsPartIdx) == true)? 1 : 0;
 
   Bool writePCMSampleFlag = pcCU->getIPCMFlag(uiAbsPartIdx);
 
-#if !REMOVE_BURST_IPCM
-  if( uiIPCM == 0 || firstIPCMFlag)
-  {
-    m_pcBinIf->encodeBinTrm (uiIPCM);
-
-    if ( firstIPCMFlag )
-    {
-      m_pcBinIf->encodeNumSubseqIPCM( numIPCM - 1 );
-      m_pcBinIf->encodePCMAlignBits();
-    }
-  }
-#else
   m_pcBinIf->encodeBinTrm (uiIPCM);
-#endif
 
   if (writePCMSampleFlag)
   {
-#if REMOVE_BURST_IPCM
     m_pcBinIf->encodePCMAlignBits();
-#endif
 
     UInt uiMinCoeffSize = pcCU->getPic()->getMinCUWidth()*pcCU->getPic()->getMinCUHeight();
     UInt uiLumaOffset   = uiMinCoeffSize*uiAbsPartIdx;
@@ -970,15 +935,7 @@ Void TEncSbac::codeIPCMInfo( TComDataCU* pcCU, UInt uiAbsPartIdx )
       }
       piPCMSample += uiWidth;
     }
-#if !REMOVE_BURST_IPCM
-    numIPCM--;
-    if(numIPCM == 0)
-    {
-      m_pcBinIf->resetBac();
-    }
-#else
     m_pcBinIf->resetBac();
-#endif
   }
 }
 
@@ -998,7 +955,7 @@ Void TEncSbac::codeQtRootCbf( TComDataCU* pcCU, UInt uiAbsPartIdx )
   DTRACE_CABAC_T( "\n" )
 }
 
-Void TEncSbac::codeQtCbfZero( TComDataCU* pcCU, UInt uiAbsPartIdx, TextType eType, UInt uiTrDepth )
+Void TEncSbac::codeQtCbfZero( TComDataCU* pcCU, TextType eType, UInt uiTrDepth )
 {
   // this function is only used to estimate the bits when cbf is 0
   // and will never be called when writing the bistream. do not need to write log
@@ -1007,7 +964,7 @@ Void TEncSbac::codeQtCbfZero( TComDataCU* pcCU, UInt uiAbsPartIdx, TextType eTyp
   m_pcBinIf->encodeBin( uiCbf , m_cCUQtCbfSCModel.get( 0, eType ? TEXT_CHROMA : eType, uiCtx ) );
 }
 
-Void TEncSbac::codeQtRootCbfZero( TComDataCU* pcCU, UInt uiAbsPartIdx )
+Void TEncSbac::codeQtRootCbfZero( TComDataCU* pcCU )
 {
   // this function is only used to estimate the bits when cbf is 0
   // and will never be called when writing the bistream. do not need to write log
@@ -1126,7 +1083,7 @@ Void TEncSbac::codeCoeffNxN( TComDataCU* pcCU, TCoeff* pcCoef, UInt uiAbsPartIdx
     return;
   if(pcCU->getSlice()->getPPS()->getUseTransformSkip())
   {
-    codeTransformSkipFlags( pcCU,uiAbsPartIdx, uiWidth, uiHeight, uiDepth, eTType );
+    codeTransformSkipFlags( pcCU,uiAbsPartIdx, uiWidth, uiHeight, eTType );
   }
   eTType = eTType == TEXT_LUMA ? TEXT_LUMA : ( eTType == TEXT_NONE ? TEXT_NONE : TEXT_CHROMA );
   
@@ -1230,7 +1187,7 @@ Void TEncSbac::codeCoeffNxN( TComDataCU* pcCU, TCoeff* pcCoef, UInt uiAbsPartIdx
       else
       {
           UInt uiSigCoeffGroup   = (uiSigCoeffGroupFlag[ iCGBlkPos ] != 0);
-          UInt uiCtxSig  = TComTrQuant::getSigCoeffGroupCtxInc( uiSigCoeffGroupFlag, iCGPosX, iCGPosY, uiScanIdx, uiWidth, uiHeight );
+          UInt uiCtxSig  = TComTrQuant::getSigCoeffGroupCtxInc( uiSigCoeffGroupFlag, iCGPosX, iCGPosY, uiWidth, uiHeight );
           m_pcBinIf->encodeBin( uiSigCoeffGroup, baseCoeffGroupCtx[ uiCtxSig ] );
       }
       
@@ -1247,7 +1204,7 @@ Void TEncSbac::codeCoeffNxN( TComDataCU* pcCU, TCoeff* pcCoef, UInt uiAbsPartIdx
           uiSig     = (pcCoef[ uiBlkPos ] != 0);
           if( iScanPosSig > iSubPos || iSubSet == 0 || numNonZero )
           {
-            uiCtxSig  = TComTrQuant::getSigCtxInc( patternSigCtx, uiScanIdx, uiPosX, uiPosY, uiLog2BlockSize, uiWidth, uiHeight, eTType );
+            uiCtxSig  = TComTrQuant::getSigCtxInc( patternSigCtx, uiScanIdx, uiPosX, uiPosY, uiLog2BlockSize, eTType );
             m_pcBinIf->encodeBin( uiSig, baseCtx[ uiCtxSig ] );
           }
           if( uiSig )
@@ -1420,7 +1377,7 @@ Void TEncSbac::codeSaoTypeIdx       ( UInt uiCode)
   else
   {
     m_pcBinIf->encodeBin( 1, m_cSaoTypeIdxSCModel.get( 0, 0, 0 ) );
-    m_pcBinIf->encodeBinEP( uiCode <= 4 ? 1 : 0 );
+    m_pcBinIf->encodeBinEP( uiCode == 1 ? 0 : 1 );
   }
 }
 /*!
@@ -1431,15 +1388,15 @@ Void TEncSbac::codeSaoTypeIdx       ( UInt uiCode)
  */
 Void TEncSbac::estBit( estBitsSbacStruct* pcEstBitsSbac, Int width, Int height, TextType eTType )
 {
-  estCBFBit( pcEstBitsSbac, 0, eTType );
+  estCBFBit( pcEstBitsSbac );
 
-  estSignificantCoeffGroupMapBit( pcEstBitsSbac, 0, eTType );
+  estSignificantCoeffGroupMapBit( pcEstBitsSbac, eTType );
   
   // encode significance map
   estSignificantMapBit( pcEstBitsSbac, width, height, eTType );
   
   // encode significant coefficients
-  estSignificantCoefficientsBit( pcEstBitsSbac, 0, eTType );
+  estSignificantCoefficientsBit( pcEstBitsSbac, eTType );
 }
 
 /*!
@@ -1448,7 +1405,7 @@ Void TEncSbac::estBit( estBitsSbacStruct* pcEstBitsSbac, Int width, Int height, 
  *    estimate bit cost for each CBP bit
  ****************************************************************************
  */
-Void TEncSbac::estCBFBit( estBitsSbacStruct* pcEstBitsSbac, UInt uiCTXIdx, TextType eTType )
+Void TEncSbac::estCBFBit( estBitsSbacStruct* pcEstBitsSbac )
 {
   ContextModel *pCtx = m_cCUQtCbfSCModel.get( 0 );
 
@@ -1474,7 +1431,7 @@ Void TEncSbac::estCBFBit( estBitsSbacStruct* pcEstBitsSbac, UInt uiCTXIdx, TextT
  *    estimate SAMBAC bit cost for significant coefficient group map
  ****************************************************************************
  */
-Void TEncSbac::estSignificantCoeffGroupMapBit( estBitsSbacStruct* pcEstBitsSbac, UInt uiCTXIdx, TextType eTType )
+Void TEncSbac::estSignificantCoeffGroupMapBit( estBitsSbacStruct* pcEstBitsSbac, TextType eTType )
 {
   Int firstCtx = 0, numCtx = NUM_SIG_CG_FLAG_CTX;
 
@@ -1570,7 +1527,7 @@ Void TEncSbac::estSignificantMapBit( estBitsSbacStruct* pcEstBitsSbac, Int width
  *    estimate bit cost of significant coefficient
  ****************************************************************************
  */
-Void TEncSbac::estSignificantCoefficientsBit( estBitsSbacStruct* pcEstBitsSbac, UInt uiCTXIdx, TextType eTType )
+Void TEncSbac::estSignificantCoefficientsBit( estBitsSbacStruct* pcEstBitsSbac, TextType eTType )
 {
   if (eTType==TEXT_LUMA)
   {
@@ -1622,4 +1579,118 @@ Void  TEncSbac::loadContexts ( TEncSbac* pScr)
 {
   this->xCopyContextsFrom(pScr);
 }
+
+Void TEncSbac::codeSAOOffsetParam(Int compIdx, SAOOffset& ctbParam, Bool sliceEnabled)
+{
+  UInt uiSymbol;
+  if(!sliceEnabled)
+  {
+    assert(ctbParam.modeIdc == SAO_MODE_OFF);
+    return;
+  }
+
+  //type
+  if(compIdx == SAO_Y || compIdx == SAO_Cb)
+  {
+    //sao_type_idx_luma or sao_type_idx_chroma
+    if(ctbParam.modeIdc == SAO_MODE_OFF)
+    {
+      uiSymbol =0;
+    }
+    else if(ctbParam.typeIdc == SAO_TYPE_BO) //BO
+    {
+      uiSymbol = 1;
+    }
+    else
+    {
+      assert(ctbParam.typeIdc < SAO_TYPE_START_BO); //EO
+      uiSymbol = 2;
+    }
+    codeSaoTypeIdx(uiSymbol); 
+  }
+
+  if(ctbParam.modeIdc == SAO_MODE_NEW)
+  {
+    Int numClasses = (ctbParam.typeIdc == SAO_TYPE_BO)?4:NUM_SAO_EO_CLASSES; 
+    Int offset[4];
+    Int k=0;
+    for(Int i=0; i< numClasses; i++)
+    {
+      if(ctbParam.typeIdc != SAO_TYPE_BO && i == SAO_CLASS_EO_PLAIN)
+      {
+        continue;
+      }
+      Int classIdx = (ctbParam.typeIdc == SAO_TYPE_BO)?(  (ctbParam.typeAuxInfo+i)% NUM_SAO_BO_CLASSES   ):i;
+      offset[k] = ctbParam.offset[classIdx];
+      k++;
+    }
+
+    for(Int i=0; i< 4; i++)
+    {
+      codeSaoMaxUvlc((offset[i]<0)?(-offset[i]):(offset[i]),  g_saoMaxOffsetQVal[compIdx] ); //sao_offset_abs
+    }
+
+
+    if(ctbParam.typeIdc == SAO_TYPE_BO)
+    {
+      for(Int i=0; i< 4; i++)
+      {
+        if(offset[i] != 0)
+        {
+          codeSAOSign((offset[i]< 0)?1:0);
+        }
+      }
+
+      codeSaoUflc(NUM_SAO_BO_CLASSES_LOG2, ctbParam.typeAuxInfo ); //sao_band_position
+    }
+    else //EO
+    {
+      if(compIdx == SAO_Y || compIdx == SAO_Cb)
+      {
+        assert(ctbParam.typeIdc - SAO_TYPE_START_EO >=0);
+        codeSaoUflc(NUM_SAO_EO_TYPES_LOG2, ctbParam.typeIdc - SAO_TYPE_START_EO ); //sao_eo_class_luma or sao_eo_class_chroma
+      }
+    }
+
+  }
+}
+
+
+Void TEncSbac::codeSAOBlkParam(SAOBlkParam& saoBlkParam
+                              , Bool* sliceEnabled
+                              , Bool leftMergeAvail
+                              , Bool aboveMergeAvail
+                              , Bool onlyEstMergeInfo // = false
+                              )
+{
+
+  Bool isLeftMerge = false;
+  Bool isAboveMerge= false;
+
+  if(leftMergeAvail)
+  {
+    isLeftMerge = ((saoBlkParam[SAO_Y].modeIdc == SAO_MODE_MERGE) && (saoBlkParam[SAO_Y].typeIdc == SAO_MERGE_LEFT));
+    codeSaoMerge( isLeftMerge?1:0  ); //sao_merge_left_flag
+  }
+
+  if( aboveMergeAvail && !isLeftMerge)
+  {
+    isAboveMerge = ((saoBlkParam[SAO_Y].modeIdc == SAO_MODE_MERGE) && (saoBlkParam[SAO_Y].typeIdc == SAO_MERGE_ABOVE)); 
+    codeSaoMerge( isAboveMerge?1:0  ); //sao_merge_left_flag
+  }
+
+  if(onlyEstMergeInfo)
+  {
+    return; //only for RDO
+  }
+
+  if(!isLeftMerge && !isAboveMerge) //not merge mode
+  {
+    for(Int compIdx=0; compIdx < NUM_SAO_COMPONENTS; compIdx++)
+    {
+      codeSAOOffsetParam(compIdx, saoBlkParam[compIdx], sliceEnabled[compIdx]);
+    }
+  }
+}
+
 //! \}
