@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,7 +64,6 @@ private:
   TVideoIOYuv                     m_cTVideoIOYuvReconFile;        ///< reconstruction YUV class
   
   // for output control
-  Bool                            m_abDecFlag[ MAX_GOP ];         ///< decoded flag in one GOP
   Int                             m_iPOCLastDisplay;              ///< last POC in display order
   
 public:

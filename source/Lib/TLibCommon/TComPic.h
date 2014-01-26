@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,11 +43,10 @@
 #include "TComPicSym.h"
 #include "TComPicYuv.h"
 #include "TComBitStream.h"
+#include "SEI.h"
 
 //! \ingroup TLibCommon
 //! \{
-
-class SEImessages;
 
 // ====================================================================================================================
 // Class definition
@@ -60,7 +59,6 @@ private:
   UInt                  m_uiTLayer;               //  Temporal layer
   Bool                  m_bUsedByCurr;            //  Used by current picture
   Bool                  m_bIsLongTerm;            //  IS long term picture
-  Bool                  m_bIsUsedAsLongTerm;      //  long term picture is used as reference before
   TComPicSym*           m_apcPicSym;              //  Symbol
   
   TComPicYuv*           m_apcPicYuv[2];           //  Texture,  0:org / 1:rec
@@ -70,26 +68,24 @@ private:
   Bool                  m_bReconstructed;
   Bool                  m_bNeededForOutput;
   UInt                  m_uiCurrSliceIdx;         // Index of current slice
-  Int*                  m_pSliceSUMap;
-  Bool*                 m_pbValidSlice;
-  Int                   m_sliceGranularityForNDBFilter;
-  Bool                  m_bIndependentSliceBoundaryForNDBFilter;
-  Bool                  m_bIndependentTileBoundaryForNDBFilter;
-  TComPicYuv*           m_pNDBFilterYuvTmp;    //!< temporary picture buffer when non-cross slice/tile boundary in-loop filtering is enabled
   Bool                  m_bCheckLTMSB;
   
   Int                   m_numReorderPics[MAX_TLAYER];
-  CroppingWindow        m_croppingWindow;
+  Window                m_conformanceWindow;
+  Window                m_defaultDisplayWindow;
 
+  bool                  m_isTop;
+  bool                  m_isField;
+  
   std::vector<std::vector<TComDataCU*> > m_vSliceCUDataLink;
 
-  SEImessages* m_SEIs; ///< Any SEI messages that have been received.  If !NULL we own the object.
+  SEIMessages  m_SEIs; ///< Any SEI messages that have been received.  If !NULL we own the object.
 
 public:
   TComPic();
   virtual ~TComPic();
   
-  Void          create( Int iWidth, Int iHeight, UInt uiMaxWidth, UInt uiMaxHeight, UInt uiMaxDepth, CroppingWindow &croppingWindow,
+  Void          create( Int iWidth, Int iHeight, UInt uiMaxWidth, UInt uiMaxHeight, UInt uiMaxDepth, Window &conformanceWindow, Window &defaultDisplayWindow, 
                         Int *numReorderPics, Bool bIsVirtual = false );
                         
   virtual Void  destroy();
@@ -101,8 +97,6 @@ public:
   Void          setUsedByCurr( Bool bUsed ) { m_bUsedByCurr = bUsed; }
   Bool          getIsLongTerm()             { return m_bIsLongTerm; }
   Void          setIsLongTerm( Bool lt ) { m_bIsLongTerm = lt; }
-  Bool          getIsUsedAsLongTerm()          { return m_bIsUsedAsLongTerm; }
-  Void          setIsUsedAsLongTerm( Bool lt ) { m_bIsUsedAsLongTerm = lt; }
   Void          setCheckLTMSBPresent     (Bool b ) {m_bCheckLTMSB=b;}
   Bool          getCheckLTMSBPresent     () { return m_bCheckLTMSB;}
 
@@ -149,33 +143,30 @@ public:
   Void          allocateNewSlice()           {m_apcPicSym->allocateNewSlice();         }
   Void          clearSliceBuffer()           {m_apcPicSym->clearSliceBuffer();         }
 
-  CroppingWindow& getCroppingWindow()        { return m_croppingWindow; }
+  Window&       getConformanceWindow()  { return m_conformanceWindow; }
+  Window&       getDefDisplayWindow()   { return m_defaultDisplayWindow; }
 
-  Void          createNonDBFilterInfo   (std::vector<Int> sliceStartAddress, Int sliceGranularityDepth
-                                        ,std::vector<Bool>* LFCrossSliceBoundary
-                                        ,Int  numTiles = 1
-                                        ,Bool bNDBFilterCrossTileBoundary = true);
-  Void          createNonDBFilterInfoLCU(Int tileID, Int sliceID, TComDataCU* pcCU, UInt startSU, UInt endSU, Int sliceGranularyDepth, UInt picWidth, UInt picHeight);
-  Void          destroyNonDBFilterInfo();
+  Bool          getSAOMergeAvailability(Int currAddr, Int mergeAddr);
 
-  Bool          getValidSlice                                  (Int sliceID)  {return m_pbValidSlice[sliceID];}
-  Bool          getIndependentSliceBoundaryForNDBFilter        ()             {return m_bIndependentSliceBoundaryForNDBFilter;}
-  Bool          getIndependentTileBoundaryForNDBFilter         ()             {return m_bIndependentTileBoundaryForNDBFilter; }
-  TComPicYuv*   getYuvPicBufferForIndependentBoundaryProcessing()             {return m_pNDBFilterYuvTmp;}
-  std::vector<TComDataCU*>& getOneSliceCUDataForNDBFilter      (Int sliceID) { return m_vSliceCUDataLink[sliceID];}
+  /* field coding parameters*/
+
+   Void              setTopField(bool b)                  {m_isTop = b;}
+   bool              isTopField()                         {return m_isTop;}
+   Void              setField(bool b)                     {m_isField = b;}
+   bool              isField()                            {return m_isField;}
 
   /** transfer ownership of seis to this picture */
-  void setSEIs(SEImessages* seis) { m_SEIs = seis; }
+  void setSEIs(SEIMessages& seis) { m_SEIs = seis; }
 
   /**
    * return the current list of SEI messages associated with this picture.
    * Pointer is valid until this->destroy() is called */
-  SEImessages* getSEIs() { return m_SEIs; }
+  SEIMessages& getSEIs() { return m_SEIs; }
 
   /**
    * return the current list of SEI messages associated with this picture.
    * Pointer is valid until this->destroy() is called */
-  const SEImessages* getSEIs() const { return m_SEIs; }
+  const SEIMessages& getSEIs() const { return m_SEIs; }
 
 };// END CLASS DEFINITION TComPic
 
