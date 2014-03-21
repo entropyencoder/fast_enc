@@ -46,6 +46,30 @@
 //! \ingroup TLibCommon
 //! \{
 
+#if GET_SAO_TIME
+
+// Return the current wall clock time in nanosecond
+int GetTimeStampNs(long long *ts)
+{
+  int ret = -1;
+#ifdef _WIN32
+  bool cur_ret;
+  LARGE_INTEGER cur_freq, cur_ts;
+  
+  cur_ret = QueryPerformanceFrequency(&cur_freq);
+  cur_ret = cur_ret && QueryPerformanceCounter(&cur_ts);
+
+  *ts = (long long)((double)cur_ts.QuadPart / (double)cur_freq.QuadPart * (double)1000000000);
+
+  ret = cur_ret ? 0 : -1;
+#else
+
+#endif
+    return ret;
+}
+
+#endif
+
 // initialize ROM variables
 Void initROM()
 {

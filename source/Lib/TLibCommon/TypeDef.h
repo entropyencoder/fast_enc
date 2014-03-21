@@ -40,6 +40,13 @@
 
 //! \ingroup TLibCommon
 //! \{
+
+#if 1     // added by yschoi
+
+#define   GET_SAO_TIME      1
+
+#endif    // added by yschoi
+
 #define BUGFIX_INTRAPERIOD 1
 #define SAO_ENCODE_ALLOW_USE_PREDEBLOCK 1
 

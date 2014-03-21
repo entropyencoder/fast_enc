@@ -1488,6 +1488,18 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
             m_pcEntropyCoder->setBitstream( m_pcBitCounter );
             Bool sliceEnabled[NUM_SAO_COMPONENTS];
             m_pcSAO->initRDOCabacCoder(m_pcEncTop->getRDGoOnSbacCoder(), pcSlice);
+#if GET_SAO_TIME
+            long long start, end;
+            if (GetTimeStampNs(&start))
+            {
+              printf("GetTimeStampNs() error!\n");
+              start = 0;
+            }
+            else
+            {
+              printf("start ts=%lld\n", start);
+            }
+#endif
             m_pcSAO->SAOProcess(pcPic
               , sliceEnabled
               , pcPic->getSlice(0)->getLambdas()
@@ -1495,7 +1507,19 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
               , m_pcCfg->getSaoLcuBoundary()
 #endif
               );
-            m_pcSAO->PCMLFDisableProcess(pcPic);   
+#if GET_SAO_TIME
+            if (GetTimeStampNs(&end))
+            {
+              printf("GetTimeStampNs() error!\n");
+              end = 0;
+            }
+            else
+            {
+              printf("end ts=%lld\n", end);
+              printf("SAOProcess() elapsed time=%lld\n", end - start);
+            }
+#endif
+            m_pcSAO->PCMLFDisableProcess(pcPic);
 
             //assign SAO slice header
             for(Int s=0; s< uiNumSlices; s++)
