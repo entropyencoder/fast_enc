@@ -1497,7 +1497,7 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
             }
             else
             {
-              printf("start ts=%lld\n", start);
+              printf("start ts = %lld\n", start);
             }
 #endif
             m_pcSAO->SAOProcess(pcPic
@@ -1515,8 +1515,8 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
             }
             else
             {
-              printf("end ts=%lld\n", end);
-              printf("SAOProcess() elapsed time=%lld\n", end - start);
+              printf("end ts = %lld\n", end);
+              printf("SAOProcess() elapsed time (ns) = %lld\n", end - start);
             }
 #endif
             m_pcSAO->PCMLFDisableProcess(pcPic);
