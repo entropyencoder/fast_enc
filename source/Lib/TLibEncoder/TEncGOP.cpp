@@ -954,9 +954,13 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
     startCUAddrSliceSegmentIdx++;
     
     pcSlice = pcPic->getSlice(0);
-    
-    // SAO parameter estimation using non-deblocked pixels for LCU bottom and right boundary areas
+
+#if TEST_SAO_ENC_W_PREDBF_REC
+    if( pcSlice->getSPS()->getUseSAO() )
+#else
+      // SAO parameter estimation using non-deblocked pixels for LCU bottom and right boundary areas
     if( pcSlice->getSPS()->getUseSAO() && m_pcCfg->getSaoLcuBoundary() )
+#endif
     {
       m_pcSAO->getPreDBFStatistics(pcPic);
     }

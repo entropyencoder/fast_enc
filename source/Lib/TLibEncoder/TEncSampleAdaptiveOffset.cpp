@@ -254,7 +254,9 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
 #endif
                                           )
 {
-  TComPicYuv* orgYuv= pPic->getPicYuvOrg();
+#if !TEST_SAO_ENC_W_PREDBF_REC
+  TComPicYuv* orgYuv = pPic->getPicYuvOrg();
+#endif
   TComPicYuv* resYuv= pPic->getPicYuvRec();
   m_lambda[SAO_Y]= lambdas[0]; m_lambda[SAO_Cb]= lambdas[1]; m_lambda[SAO_Cr]= lambdas[2];
   TComPicYuv* srcYuv = m_tempPicYuv;
@@ -262,6 +264,7 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
   srcYuv->setBorderExtension(false);
   srcYuv->extendPicBorder();
 
+#if !TEST_SAO_ENC_W_PREDBF_REC
   //collect statistics
   getStatistics(m_statData, orgYuv, srcYuv, pPic);
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
@@ -269,6 +272,7 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
   {
     addPreDBFStatistics(m_statData);
   }
+#endif
 #endif
   //slice on/off 
   decidePicParams(sliceEnabled, pPic->getSlice(0)->getDepth()); 
@@ -283,7 +287,11 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
 Void TEncSampleAdaptiveOffset::getPreDBFStatistics(TComPic* pPic)
 {
+#if TEST_SAO_ENC_W_PREDBF_REC
+  getStatistics(m_statData, pPic->getPicYuvOrg(), pPic->getPicYuvRec(), pPic, false);
+#else
   getStatistics(m_preDBFstatData, pPic->getPicYuvOrg(), pPic->getPicYuvRec(), pPic, true);
+#endif
 }
 
 Void TEncSampleAdaptiveOffset::addPreDBFStatistics(SAOStatData*** blkStats)

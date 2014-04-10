@@ -43,7 +43,8 @@
 
 #if 1     // added by yschoi
 
-#define   GET_SAO_TIME      1
+#define GET_SAO_TIME      1
+#define TEST_SAO_ENC_W_PREDBF_REC   0 //1   // estimate SAO parameters with pre-deblock recon (regardless of 'SaoLcuBoundary' in cfg)
 
 #endif    // added by yschoi
 
