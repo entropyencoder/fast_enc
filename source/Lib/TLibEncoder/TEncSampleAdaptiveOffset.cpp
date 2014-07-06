@@ -264,6 +264,7 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
   srcYuv->setBorderExtension(false);
   srcYuv->extendPicBorder();
 
+#if !TEST_SAO_GETSTATS_REORDER
 #if !TEST_SAO_ENC_W_PREDBF_REC
   //collect statistics
   getStatistics(m_statData, orgYuv, srcYuv, pPic);
@@ -274,8 +275,24 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
   }
 #endif
 #endif
+#endif
   //slice on/off 
   decidePicParams(sliceEnabled, pPic->getSlice(0)->getDepth()); 
+#if TEST_SAO_GETSTATS_REORDER
+  if (sliceEnabled[SAO_Y] || sliceEnabled[SAO_Cb] || sliceEnabled[SAO_Cr])
+  {
+#if !TEST_SAO_ENC_W_PREDBF_REC
+    //collect statistics
+    getStatistics(m_statData, orgYuv, srcYuv, pPic);
+#if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
+    if (isPreDBFSamplesUsed)
+    {
+      addPreDBFStatistics(m_statData);
+    }
+#endif
+#endif
+  }
+#endif
 
   //block on/off 
   SAOBlkParam* reconParams = new SAOBlkParam[m_numCTUsPic]; //temporary parameter buffer for storing reconstructed SAO parameters
@@ -374,6 +391,7 @@ Void TEncSampleAdaptiveOffset::decidePicParams(Bool* sliceEnabled, Int picTempLa
       && (m_saoDisabledRate[compIdx][picTempLayer-1] > ((compIdx==SAO_Y) ? SAO_ENCODING_RATE : SAO_ENCODING_RATE_CHROMA)) )
     {
       sliceEnabled[compIdx] = false;
+      //printf("sliceEnabled is set to false.\n");
     }
 #else
     // decide slice-level on/off based on previous results
