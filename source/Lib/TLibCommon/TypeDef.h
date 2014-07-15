@@ -46,6 +46,7 @@
 #define GET_SAO_TIME                0   //1   // get SAOProcess() execution time
 #define TEST_SAO_ENC_W_PREDBF_REC   0   //1   // estimate SAO parameters with pre-deblock recon (regardless of 'SaoLcuBoundary' in cfg)
 #define	TEST_SAO_GETSTATS_REORDER	  0   //1	  // Move getStatistics() after decidePicParams() and skip getStatistics() if all sliceEnabled[3] are disabled.
+#define PRINT_SAO_MODES             0   //1   // Print LCU-level SAO types after encoding
 
 // items to want to test, not implemented yet
 #define TEST_SAO_ENC_NO_MERGE       0   // ...

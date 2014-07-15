@@ -791,6 +791,9 @@ Void TEncSampleAdaptiveOffset::decideBlkParams(TComPic* pic, Bool* sliceEnabled,
   if(!sliceEnabled[SAO_Y] && !sliceEnabled[SAO_Cb] && !sliceEnabled[SAO_Cr])
   {
     isAllBlksDisabled = true;
+#if PRINT_SAO_MODES
+    printf("'isAllBlksDisabled' is set to true.\n");
+#endif
   }
 
   m_pcRDGoOnSbacCoder->load(m_pppcRDSbacCoder[ SAO_CABACSTATE_PIC_INIT ]);
@@ -857,6 +860,68 @@ Void TEncSampleAdaptiveOffset::decideBlkParams(TComPic* pic, Bool* sliceEnabled,
     offsetCTU(ctu, srcYuv, resYuv, reconParams[ctu], pic);
   } //ctu
 
+#if PRINT_SAO_MODES
+  if (!isAllBlksDisabled)
+  {
+    printf("Signaled SAO luma modes\n");
+    for (Int ctu = 0; ctu < m_numCTUsPic; ctu++)
+    {
+      if ((ctu % (pic->getPicSym()->getFrameWidthInCU()) == 0)) printf("\n");
+      switch (codedParams[ctu][SAO_Y].modeIdc)
+      {
+      case SAO_MODE_NEW:
+        switch (codedParams[ctu][SAO_Y].typeIdc)
+        {
+        case SAO_TYPE_EO_0  : printf("%4s", "EO0"); break;
+        case SAO_TYPE_EO_90 : printf("%4s", "EO1"); break;
+        case SAO_TYPE_EO_135: printf("%4s", "EO2"); break;
+        case SAO_TYPE_EO_45 : printf("%4s", "EO3"); break;
+        //case SAO_TYPE_BO    : printf("%4s%4d", "BO", reconParams[ctu][SAO_Y].typeAuxInfo); break;
+        case SAO_TYPE_BO    : printf("%4s", "BO"); break;
+        }
+        break;
+      case SAO_MODE_MERGE:
+        switch (codedParams[ctu][SAO_Y].typeIdc)
+        {
+        case SAO_MERGE_LEFT : printf("%4s", "<"); break;
+        case SAO_MERGE_ABOVE: printf("%4s", "^"); break;
+        }
+        break;
+      default:  printf("%4s", "x"); break;  // SAO off
+      }
+    }
+    printf("\n\n");
+    printf("Reconstructed SAO luma modes\n");
+    for (Int ctu = 0; ctu < m_numCTUsPic; ctu++)
+    {
+      if ((ctu % (pic->getPicSym()->getFrameWidthInCU()) == 0)) printf("\n");
+      switch (reconParams[ctu][SAO_Y].modeIdc)
+      {
+      case SAO_MODE_NEW:
+        switch (reconParams[ctu][SAO_Y].typeIdc)
+        {
+        case SAO_TYPE_EO_0  : printf("%4s", "EO0"); break;
+        case SAO_TYPE_EO_90 : printf("%4s", "EO1"); break;
+        case SAO_TYPE_EO_135: printf("%4s", "EO2"); break;
+        case SAO_TYPE_EO_45 : printf("%4s", "EO3"); break;
+        //case SAO_TYPE_BO: printf("%4s%4d", "BO", reconParams[ctu][SAO_Y].typeAuxInfo); break;
+        case SAO_TYPE_BO    : printf("%4s", "BO"); break;
+        }
+        break;
+      case SAO_MODE_MERGE:
+        switch (reconParams[ctu][SAO_Y].typeIdc)
+        {
+        case SAO_MERGE_LEFT : printf("%4s", "<"); break;
+        case SAO_MERGE_ABOVE: printf("%4s", "^"); break;
+        }
+        break;
+      default:  printf("%4s", "x"); break;  // SAO off
+      }
+    }
+    printf("\n");
+  }
+
+#endif
 #if SAO_ENCODING_CHOICE 
   Int picTempLayer = pic->getSlice(0)->getDepth();
   Int numLcusForSAOOff[NUM_SAO_COMPONENTS];
