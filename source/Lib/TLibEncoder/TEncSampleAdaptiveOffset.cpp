@@ -254,7 +254,7 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
 #endif
                                           )
 {
-#if !TEST_SAO_ENC_W_PREDBF_REC
+#if !TEST_SAO_W_PREDBF_RECON  
   TComPicYuv* orgYuv = pPic->getPicYuvOrg();
 #endif
   TComPicYuv* resYuv= pPic->getPicYuvRec();
@@ -265,7 +265,7 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
   srcYuv->extendPicBorder();
 
 #if !TEST_SAO_GETSTATS_REORDER
-#if !TEST_SAO_ENC_W_PREDBF_REC
+#if !TEST_SAO_W_PREDBF_RECON  
   //collect statistics
   getStatistics(m_statData, orgYuv, srcYuv, pPic);
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
@@ -281,7 +281,7 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
 #if TEST_SAO_GETSTATS_REORDER
   if (sliceEnabled[SAO_Y] || sliceEnabled[SAO_Cb] || sliceEnabled[SAO_Cr])
   {
-#if !TEST_SAO_ENC_W_PREDBF_REC
+#if !TEST_SAO_W_PREDBF_RECON  
     //collect statistics
     getStatistics(m_statData, orgYuv, srcYuv, pPic);
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
@@ -304,7 +304,7 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
 Void TEncSampleAdaptiveOffset::getPreDBFStatistics(TComPic* pPic)
 {
-#if TEST_SAO_ENC_W_PREDBF_REC
+#if TEST_SAO_W_PREDBF_RECON  
   getStatistics(m_statData, pPic->getPicYuvOrg(), pPic->getPicYuvRec(), pPic, false);
 #else
   getStatistics(m_preDBFstatData, pPic->getPicYuvOrg(), pPic->getPicYuvRec(), pPic, true);
@@ -621,7 +621,19 @@ Void TEncSampleAdaptiveOffset::deriveModeNewRDO(Int ctu, std::vector<SAOBlkParam
   m_pcRDGoOnSbacCoder->store(cabacCoderRDO[SAO_CABACSTATE_BLK_TEMP]);
   if(sliceEnabled[compIdx])
   {
-    for(Int typeIdc=0; typeIdc< NUM_SAO_NEW_TYPES; typeIdc++)
+#if TEST_SAO_EO0_ONLY
+    Int typeIdc = SAO_TYPE_EO_0;
+#elif TEST_SAO_EO1_ONLY
+    Int typeIdc = SAO_TYPE_EO_1;
+#elif TEST_SAO_EO2_ONLY
+    Int typeIdc = SAO_TYPE_EO_2;
+#elif TEST_SAO_EO3_ONLY
+    Int typeIdc = SAO_TYPE_EO_3;
+#elif TEST_SAO_BO_ONLY
+    Int typeIdc = SAO_TYPE_BO;
+#else
+    for (Int typeIdc = 0; typeIdc< NUM_SAO_NEW_TYPES; typeIdc++)
+#endif
     {
       testOffset[compIdx].modeIdc = SAO_MODE_NEW;
       testOffset[compIdx].typeIdc = typeIdc;
@@ -674,7 +686,19 @@ Void TEncSampleAdaptiveOffset::deriveModeNewRDO(Int ctu, std::vector<SAOBlkParam
 
   //doesn't need to store cabac status here since the whole CTU parameters will be re-encoded at the end of this function
 
-  for(Int typeIdc=0; typeIdc< NUM_SAO_NEW_TYPES; typeIdc++)
+#if TEST_SAO_EO0_ONLY
+  Int typeIdc = SAO_TYPE_EO_0;
+#elif TEST_SAO_EO1_ONLY
+  Int typeIdc = SAO_TYPE_EO_1;
+#elif TEST_SAO_EO2_ONLY
+  Int typeIdc = SAO_TYPE_EO_2;
+#elif TEST_SAO_EO3_ONLY
+  Int typeIdc = SAO_TYPE_EO_3;
+#elif TEST_SAO_BO_ONLY
+  Int typeIdc = SAO_TYPE_BO;
+#else
+  for (Int typeIdc = 0; typeIdc< NUM_SAO_NEW_TYPES; typeIdc++)
+#endif
   {
     m_pcRDGoOnSbacCoder->load(cabacCoderRDO[SAO_CABACSTATE_BLK_MID]);
     m_pcRDGoOnSbacCoder->resetBits();
@@ -813,10 +837,25 @@ Void TEncSampleAdaptiveOffset::decideBlkParams(TComPic* pic, Bool* sliceEnabled,
 
     //get merge list
     std::vector<SAOBlkParam*> mergeList;
+#if TEST_DELAYED_SAO_0 || TEST_DELAYED_SAO_1
+    Bool isLeftAvail = (ctu % pic->getPicSym()->getFrameWidthInCU() != 0);
+    if (isLeftAvail)
+      getMergeList(pic, ctu, reconParams, mergeList);
+#else
     getMergeList(pic, ctu, reconParams, mergeList);
+#endif
+
+#if PRINT_SAO_COSTS
+    int iSelectedMode = 0;
+    printf("CTU no.: %4d, ", ctu);
+#endif
 
     minCost = MAX_DOUBLE;
-    for(Int mode=0; mode < NUM_SAO_MODES; mode++)
+#if TEST_DELAYED_SAO_0 || TEST_DELAYED_SAO_1
+    for (Int mode = 0; mode < (isLeftAvail ? NUM_SAO_MODES : 1); mode++)
+#else
+    for (Int mode = 0; mode < NUM_SAO_MODES; mode++)
+#endif
     {
       switch(mode)
       {
@@ -827,14 +866,26 @@ Void TEncSampleAdaptiveOffset::decideBlkParams(TComPic* pic, Bool* sliceEnabled,
         break;
       case SAO_MODE_NEW:
         {
+#if TEST_DELAYED_SAO_0 || TEST_DELAYED_SAO_1
+          deriveModeNewRDO(ctu-1, mergeList, sliceEnabled, blkStats, modeParam, modeCost, m_pppcRDSbacCoder, SAO_CABACSTATE_BLK_CUR);
+#else
           deriveModeNewRDO(ctu, mergeList, sliceEnabled, blkStats, modeParam, modeCost, m_pppcRDSbacCoder, SAO_CABACSTATE_BLK_CUR);
+#endif
 
         }
         break;
       case SAO_MODE_MERGE:
         {
-          deriveModeMergeRDO(ctu, mergeList, sliceEnabled, blkStats , modeParam, modeCost, m_pppcRDSbacCoder, SAO_CABACSTATE_BLK_CUR);
-        }
+#if TEST_NO_SAO_MERGE
+          modeCost = MAX_DOUBLE;
+#else
+#if TEST_DELAYED_SAO_0 || TEST_DELAYED_SAO_1
+          deriveModeMergeRDO(ctu-1, mergeList, sliceEnabled, blkStats, modeParam, modeCost, m_pppcRDSbacCoder, SAO_CABACSTATE_BLK_CUR);
+#else
+          deriveModeMergeRDO(ctu, mergeList, sliceEnabled, blkStats, modeParam, modeCost, m_pppcRDSbacCoder, SAO_CABACSTATE_BLK_CUR);
+#endif
+#endif
+      }
         break;
       default:
         {
@@ -843,9 +894,22 @@ Void TEncSampleAdaptiveOffset::decideBlkParams(TComPic* pic, Bool* sliceEnabled,
           exit(-1);
         }
       }
+#if PRINT_SAO_COSTS
+      if (mode == SAO_MODE_NEW)
+      {
+        printf("N, %15lf ,   ", modeCost);
+      }
+      else if (mode == SAO_MODE_MERGE)
+      {
+        printf("M, %15lf ,   ", modeCost);
+      }
+#endif
 
       if(modeCost < minCost)
       {
+#if PRINT_SAO_COSTS
+        iSelectedMode = mode;
+#endif
         minCost = modeCost;
         codedParams[ctu] = modeParam;
         m_pcRDGoOnSbacCoder->store(m_pppcRDSbacCoder[ SAO_CABACSTATE_BLK_NEXT ]);
@@ -853,6 +917,16 @@ Void TEncSampleAdaptiveOffset::decideBlkParams(TComPic* pic, Bool* sliceEnabled,
       }
     } //mode
     m_pcRDGoOnSbacCoder->load(m_pppcRDSbacCoder[ SAO_CABACSTATE_BLK_NEXT ]);
+
+#if PRINT_SAO_COSTS
+    switch(codedParams[ctu][SAO_Y].modeIdc)
+    {
+    case SAO_MODE_OFF:    printf("OFF\n");    break;
+    case SAO_MODE_NEW:    printf("NEW\n");    break;
+    case SAO_MODE_MERGE:  printf("MERGE\n");  break;
+    default:              printf("???\n");    break;
+    }
+#endif
 
     //apply reconstructed offsets
     reconParams[ctu] = codedParams[ctu];
@@ -863,62 +937,84 @@ Void TEncSampleAdaptiveOffset::decideBlkParams(TComPic* pic, Bool* sliceEnabled,
 #if PRINT_SAO_MODES
   if (!isAllBlksDisabled)
   {
-    printf("Signaled SAO luma modes\n");
-    for (Int ctu = 0; ctu < m_numCTUsPic; ctu++)
+    printf("Signaled SAO modes\n");
+    //for (int c = 0; c < NUM_SAO_COMPONENTS; c++)
+    for (int c = 0; c < NUM_SAO_COMPONENTS-1; c++) 
     {
-      if ((ctu % (pic->getPicSym()->getFrameWidthInCU()) == 0)) printf("\n");
-      switch (codedParams[ctu][SAO_Y].modeIdc)
+      //if (c == SAO_Y)printf("Y");
+      //else if (c == SAO_Cb)printf("Cb");
+      //else printf("Cr");
+      if (c == SAO_Y)printf("Luma");
+      else printf("Chroma");
+
+      for (Int ctu = 0; ctu < m_numCTUsPic; ctu++)
       {
-      case SAO_MODE_NEW:
-        switch (codedParams[ctu][SAO_Y].typeIdc)
+        if ((ctu % (pic->getPicSym()->getFrameWidthInCU()) == 0)) printf("\n");
+        switch (codedParams[ctu][c].modeIdc)
         {
-        case SAO_TYPE_EO_0  : printf("%4s", "EO0"); break;
-        case SAO_TYPE_EO_90 : printf("%4s", "EO1"); break;
-        case SAO_TYPE_EO_135: printf("%4s", "EO2"); break;
-        case SAO_TYPE_EO_45 : printf("%4s", "EO3"); break;
-        //case SAO_TYPE_BO    : printf("%4s%4d", "BO", reconParams[ctu][SAO_Y].typeAuxInfo); break;
-        case SAO_TYPE_BO    : printf("%4s", "BO"); break;
+        case SAO_MODE_NEW:
+          switch (codedParams[ctu][c].typeIdc)
+          {
+          case SAO_TYPE_EO_0: printf("%4s", "EO0"); break;
+          case SAO_TYPE_EO_90: printf("%4s", "EO1"); break;
+          case SAO_TYPE_EO_135: printf("%4s", "EO2"); break;
+          case SAO_TYPE_EO_45: printf("%4s", "EO3"); break;
+            //case SAO_TYPE_BO    : printf("%4s%4d", "BO", reconParams[ctu][c].typeAuxInfo); break;
+          case SAO_TYPE_BO: printf("%4s", "BO"); break;
+          }
+          break;
+        case SAO_MODE_MERGE:
+          switch (codedParams[ctu][c].typeIdc)
+          {
+          case SAO_MERGE_LEFT: printf("%4s", "<"); break;
+          case SAO_MERGE_ABOVE: printf("%4s", "^"); break;
+          }
+          break;
+        default:  printf("%4s", "x"); break;  // SAO off
         }
-        break;
-      case SAO_MODE_MERGE:
-        switch (codedParams[ctu][SAO_Y].typeIdc)
-        {
-        case SAO_MERGE_LEFT : printf("%4s", "<"); break;
-        case SAO_MERGE_ABOVE: printf("%4s", "^"); break;
-        }
-        break;
-      default:  printf("%4s", "x"); break;  // SAO off
       }
-    }
-    printf("\n\n");
-    printf("Reconstructed SAO luma modes\n");
-    for (Int ctu = 0; ctu < m_numCTUsPic; ctu++)
-    {
-      if ((ctu % (pic->getPicSym()->getFrameWidthInCU()) == 0)) printf("\n");
-      switch (reconParams[ctu][SAO_Y].modeIdc)
-      {
-      case SAO_MODE_NEW:
-        switch (reconParams[ctu][SAO_Y].typeIdc)
-        {
-        case SAO_TYPE_EO_0  : printf("%4s", "EO0"); break;
-        case SAO_TYPE_EO_90 : printf("%4s", "EO1"); break;
-        case SAO_TYPE_EO_135: printf("%4s", "EO2"); break;
-        case SAO_TYPE_EO_45 : printf("%4s", "EO3"); break;
-        //case SAO_TYPE_BO: printf("%4s%4d", "BO", reconParams[ctu][SAO_Y].typeAuxInfo); break;
-        case SAO_TYPE_BO    : printf("%4s", "BO"); break;
-        }
-        break;
-      case SAO_MODE_MERGE:
-        switch (reconParams[ctu][SAO_Y].typeIdc)
-        {
-        case SAO_MERGE_LEFT : printf("%4s", "<"); break;
-        case SAO_MERGE_ABOVE: printf("%4s", "^"); break;
-        }
-        break;
-      default:  printf("%4s", "x"); break;  // SAO off
-      }
+      printf("\n");
     }
     printf("\n");
+
+    printf("Reconstructed SAO modes\n");
+    //for (int c = 0; c < NUM_SAO_COMPONENTS; c++)
+    for (int c = 0; c < NUM_SAO_COMPONENTS-1; c++)
+    {
+      //if (c == SAO_Y)printf("Y");
+      //else if (c == SAO_Cb)printf("Cb");
+      //else printf("Cr");
+      if (c == SAO_Y)printf("Luma");
+      else printf("Chroma");
+
+      for (Int ctu = 0; ctu < m_numCTUsPic; ctu++)
+      {
+        if ((ctu % (pic->getPicSym()->getFrameWidthInCU()) == 0)) printf("\n");
+        switch (reconParams[ctu][c].modeIdc)
+        {
+        case SAO_MODE_NEW:
+          switch (reconParams[ctu][c].typeIdc)
+          {
+          case SAO_TYPE_EO_0: printf("%4s", "EO0"); break;
+          case SAO_TYPE_EO_90: printf("%4s", "EO1"); break;
+          case SAO_TYPE_EO_135: printf("%4s", "EO2"); break;
+          case SAO_TYPE_EO_45: printf("%4s", "EO3"); break;
+            //case SAO_TYPE_BO: printf("%4s%4d", "BO", reconParams[ctu][c].typeAuxInfo); break;
+          case SAO_TYPE_BO: printf("%4s", "BO"); break;
+          }
+          break;
+        case SAO_MODE_MERGE:
+          switch (reconParams[ctu][c].typeIdc)
+          {
+          case SAO_MERGE_LEFT: printf("%4s", "<"); break;
+          case SAO_MERGE_ABOVE: printf("%4s", "^"); break;
+          }
+          break;
+        default:  printf("%4s", "x"); break;  // SAO off
+        }
+      }
+      printf("\n");
+    }
   }
 
 #endif
@@ -978,7 +1074,19 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
   Int* skipLinesR = m_skipLinesR[compIdx];
   Int* skipLinesB = m_skipLinesB[compIdx];
 
-  for(Int typeIdx=0; typeIdx< NUM_SAO_NEW_TYPES; typeIdx++)
+#if TEST_SAO_EO0_ONLY
+  Int typeIdx = SAO_TYPE_EO_0;
+#elif TEST_SAO_EO1_ONLY
+  Int typeIdx = SAO_TYPE_EO_1;
+#elif TEST_SAO_EO2_ONLY
+  Int typeIdx = SAO_TYPE_EO_2;
+#elif TEST_SAO_EO3_ONLY
+  Int typeIdx = SAO_TYPE_EO_3;
+#elif TEST_SAO_BO_ONLY
+  Int typeIdx = SAO_TYPE_BO;
+#else
+  for (Int typeIdx = 0; typeIdx< NUM_SAO_NEW_TYPES; typeIdx++)
+#endif
   {
     SAOStatData& statsData= statsDataTypes[typeIdx];
     statsData.reset();
@@ -993,7 +1101,11 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
       {
         diff +=2;
         count+=2;
+#if TEST_SAO_CTU_BND
+        endY   = height;
+#else
         endY   = (isBelowAvail) ? (height - skipLinesB[typeIdx]) : height;
+#endif
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
         startX = (!isCalculatePreDeblockSamples) ? (isLeftAvail  ? 0 : 1)
                                                  : (isRightAvail ? (width - skipLinesR[typeIdx]) : (width - 1))
@@ -1006,7 +1118,11 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
                                                  : (isRightAvail ? width : (width - 1))
                                                  ;
 #else
-        endX   = isRightAvail ? (width - skipLinesR[typeIdx]): (width - 1);
+#if TEST_SAO_CTU_BND
+        endX = isRightAvail ? width : (width - 1);
+#else
+        endX = isRightAvail ? (width - skipLinesR[typeIdx]) : (width - 1);
+#endif
 #endif
         for (y=0; y<endY; y++)
         {
@@ -1068,9 +1184,17 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
                                                  : width
                                                  ;
 #else
-        endX   = isRightAvail ? (width - skipLinesR[typeIdx]) : width ;
+#if TEST_SAO_CTU_BND
+        endX = width;
+#else
+        endX = isRightAvail ? (width - skipLinesR[typeIdx]) : width;
 #endif
-        endY   = isBelowAvail ? (height - skipLinesB[typeIdx]) : (height - 1);
+#endif
+#if TEST_SAO_CTU_BND
+        endY = isBelowAvail ? height : (height - 1);
+#else
+        endY = isBelowAvail ? (height - skipLinesB[typeIdx]) : (height - 1);
+#endif
         if (!isAboveAvail)
         {
           srcLine += srcStride;
@@ -1158,9 +1282,17 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
                                                  : (isRightAvail ? width : (width - 1))
                                                  ;
 #else
-        endX   = isRightAvail ? (width - skipLinesR[typeIdx]): (width - 1);
+#if TEST_SAO_CTU_BND
+        endX = isRightAvail ? width : (width - 1);
+#else
+        endX = isRightAvail ? (width - skipLinesR[typeIdx]) : (width - 1);
 #endif
-        endY   = isBelowAvail ? (height - skipLinesB[typeIdx]) : (height - 1);
+#endif
+#if TEST_SAO_CTU_BND
+        endY = isBelowAvail ? height : (height - 1);
+#else
+        endY = isBelowAvail ? (height - skipLinesB[typeIdx]) : (height - 1);
+#endif
 
         //prepare 2nd line's upper sign
         Pel* srcLineBelow = srcLine + srcStride;
@@ -1256,9 +1388,17 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
                                                  : (isRightAvail ? width : (width - 1))
                                                  ;
 #else
-        endX   = isRightAvail ? (width - skipLinesR[typeIdx]) : (width - 1);
+#if TEST_SAO_CTU_BND
+        endX = isRightAvail ? width : (width - 1);
+#else
+        endX = isRightAvail ? (width - skipLinesR[typeIdx]) : (width - 1);
 #endif
-        endY   = isBelowAvail ? (height - skipLinesB[typeIdx]) : (height - 1);
+#endif
+#if TEST_SAO_CTU_BND
+        endY = isBelowAvail ? height : (height - 1);
+#else
+        endY = isBelowAvail ? (height - skipLinesB[typeIdx]) : (height - 1);
+#endif
 
         //prepare 2nd line upper sign
         Pel* srcLineBelow = srcLine + srcStride;
@@ -1347,10 +1487,18 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
                                                 :width
                                                 ;
 #else
-        endX = isRightAvail ? (width- skipLinesR[typeIdx]) : width;
+#if TEST_SAO_CTU_BND
+        endX = width;
+#else
+        endX = isRightAvail ? (width - skipLinesR[typeIdx]) : width;
 #endif
-        endY = isBelowAvail ? (height- skipLinesB[typeIdx]) : height;
-        Int shiftBits = ((compIdx == SAO_Y)?g_bitDepthY:g_bitDepthC)- NUM_SAO_BO_CLASSES_LOG2;
+#endif
+#if TEST_SAO_CTU_BND
+        endY = height;
+#else
+        endY = isBelowAvail ? (height - skipLinesB[typeIdx]) : height;
+#endif
+        Int shiftBits = ((compIdx == SAO_Y) ? g_bitDepthY : g_bitDepthC) - NUM_SAO_BO_CLASSES_LOG2;
         for (y=0; y< endY; y++)
         {
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK

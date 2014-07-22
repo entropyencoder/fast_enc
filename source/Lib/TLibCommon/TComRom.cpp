@@ -46,7 +46,10 @@
 //! \ingroup TLibCommon
 //! \{
 
+#if 1 // yschoi added
+
 #if GET_SAO_TIME
+long long g_elapsed_time[10] = { 0, };
 
 // Return the current wall clock time in nanosecond
 int GetTimeStampNs(long long *ts)
@@ -63,10 +66,17 @@ int GetTimeStampNs(long long *ts)
 
   ret = cur_ret ? 0 : -1;
 #else
+  struct timespec cur_ts;
+
+  ret = clock_gettime(CLOCK_MONOTONIC_RAW, &cur_ts);
+
+  (*ts) = (long long)cur_ts.tv_sec*(long long)1000000000 + (long long)cur_ts.tv_nsec;
 
 #endif
     return ret;
 }
+
+#endif
 
 #endif
 

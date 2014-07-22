@@ -240,8 +240,15 @@ Void TComSampleAdaptiveOffset::invertQuantOffsets(Int compIdx, Int typeIdc, Int 
 
 Int TComSampleAdaptiveOffset::getMergeList(TComPic* pic, Int ctu, SAOBlkParam* blkParams, std::vector<SAOBlkParam*>& mergeList)
 {
+#if TEST_DELAYED_SAO_0 || TEST_DELAYED_SAO_1
+  if (ctu % pic->getPicSym()->getFrameWidthInCU() == 0)
+    return 0;
+  Int ctuX = (ctu-1) % m_numCTUInWidth;
+  Int ctuY = (ctu-1) / m_numCTUInWidth;
+#else
   Int ctuX = ctu % m_numCTUInWidth;
   Int ctuY = ctu / m_numCTUInWidth;
+#endif
   Int mergedCTUPos;
   Int numValidMergeCandidates = 0;
 
@@ -255,8 +262,16 @@ Int TComSampleAdaptiveOffset::getMergeList(TComPic* pic, Int ctu, SAOBlkParam* b
       {
         if(ctuY > 0)
         {
+#if TEST_DELAYED_SAO_0
+          mergedCTUPos = ctu-1- m_numCTUInWidth;
+          if (pic->getSAOMergeAvailability(ctu-1, mergedCTUPos))
+#elif TEST_DELAYED_SAO_1
+          mergedCTUPos = ctu- m_numCTUInWidth;
+          if (pic->getSAOMergeAvailability(ctu, mergedCTUPos))
+#else
           mergedCTUPos = ctu- m_numCTUInWidth;
           if( pic->getSAOMergeAvailability(ctu, mergedCTUPos) )
+#endif
           {
             mergeCandidate = &(blkParams[mergedCTUPos]);
           }
@@ -267,8 +282,13 @@ Int TComSampleAdaptiveOffset::getMergeList(TComPic* pic, Int ctu, SAOBlkParam* b
       {
         if(ctuX > 0)
         {
+#if TEST_DELAYED_SAO_0 || TEST_DELAYED_SAO_1
+          mergedCTUPos = ctu-1- 1;
+          if (pic->getSAOMergeAvailability(ctu-1, mergedCTUPos))
+#else
           mergedCTUPos = ctu- 1;
           if( pic->getSAOMergeAvailability(ctu, mergedCTUPos) )
+#endif
           {
             mergeCandidate = &(blkParams[mergedCTUPos]);
           }

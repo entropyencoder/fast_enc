@@ -43,16 +43,28 @@
 
 #if 1     // added by yschoi
 
-#define GET_SAO_TIME                0   //1   // get SAOProcess() execution time
-#define TEST_SAO_ENC_W_PREDBF_REC   0   //1   // estimate SAO parameters with pre-deblock recon (regardless of 'SaoLcuBoundary' in cfg)
-#define	TEST_SAO_GETSTATS_REORDER	  0   //1	  // Move getStatistics() after decidePicParams() and skip getStatistics() if all sliceEnabled[3] are disabled.
-#define PRINT_SAO_MODES             0   //1   // Print LCU-level SAO types after encoding
+#define GET_SAO_TIME                1 //0   // get SAOProcess() execution time
+#define PRINT_SAO_MODES             0   // Print LCU-level SAO types after encoding
+#define PRINT_SAO_COSTS             0   
+#define TEST_SAO_CTU_BND            0      
+#define	TEST_SAO_GETSTATS_REORDER	  1 //0   // Move getStatistics() after decidePicParams() and skip getStatistics() if all sliceEnabled[3] are disabled.
+#define TEST_SAO_W_PREDBF_RECON     0   // estimate SAO parameters with pre-deblock recon (regardless of 'SaoLcuBoundary' in cfg)
+#define TEST_DELAYED_SAO_0          0   // perform delayed SAO while estimating 'merge up' with the left above CTU's SAO mode
+#define TEST_DELAYED_SAO_1          0   // perform delayed SAO while estimating 'merge up' with the above CTU's SAO mode 
+//#define TEST_NO_SAO_ITER_OFFSET     0   
+#define TEST_NO_SAO_MERGE           0   
+#define TEST_SAO_EO0_ONLY           0   
+#define TEST_SAO_EO1_ONLY           0   
+#define TEST_SAO_EO2_ONLY           0   
+#define TEST_SAO_EO3_ONLY           0   
+#define TEST_SAO_BO_ONLY            0   
+#define TEST_NO_SAO_SLICE_DEC       0   // Disable HM's slice-level SAO decision (actually early termination by simple equations)
 
 // items to want to test, not implemented yet
-#define TEST_SAO_ENC_NO_MERGE       0   // ...
-#define TEST_SAO_ENC_ITER_OFFSET    0   // ...
-#define TEST_SAO_ENC_PREV_CTU_INFO  0   // ...
-#define TEST_SAO_ENC_PRED_INFO      0   // ...
+#define TEST_FAST_SAO_EO_INTRA_DIR  0   
+#define TEST_FAST_SAO_EO_EDGE_DIR   0   
+#define TEST_FAST_SAO_BO_DC_COEF    0   
+//#define TEST_DELAYED_SAO_2          0   
 
 #endif    // added by yschoi
 
@@ -87,12 +99,17 @@
   
 #define C1FLAG_NUMBER               8 // maximum number of largerThan1 flag coded in one chunk :  16 in HM5
 #define C2FLAG_NUMBER               1 // maximum number of largerThan2 flag coded in one chunk:  16 in HM5 
+#if TEST_NO_SAO_SLICE_DEC
+#define SAO_ENCODING_CHOICE              0  ///< I0184: picture early termination
+#define SAO_ENCODING_CHOICE_CHROMA       0  ///< I0184: picture early termination
+#else
 #define SAO_ENCODING_CHOICE              1  ///< I0184: picture early termination
 #if SAO_ENCODING_CHOICE
 #define SAO_ENCODING_RATE                0.75
 #define SAO_ENCODING_CHOICE_CHROMA       1 ///< J0044: picture early termination Luma and Chroma are handled separately
 #if SAO_ENCODING_CHOICE_CHROMA
 #define SAO_ENCODING_RATE_CHROMA         0.5
+#endif
 #endif
 #endif
 

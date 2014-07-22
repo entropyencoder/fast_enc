@@ -46,15 +46,21 @@
 //! \ingroup TLibCommon
 //! \{
 
+#if 1 // yschoi added
+
 #if GET_SAO_TIME
 
 #ifdef _WIN32
-#include <Windows.h>
+#include <windows.h>
 #else
 #include <time.h>
 #endif
 
 extern  int GetTimeStampNs(long long *ts);
+
+extern long long g_elapsed_time[10];
+
+#endif
 
 #endif
 

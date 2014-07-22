@@ -955,14 +955,43 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
     
     pcSlice = pcPic->getSlice(0);
 
-#if TEST_SAO_ENC_W_PREDBF_REC
+#if GET_SAO_TIME
+    for (int i = 0; i < 10; i++)
+      g_elapsed_time[i] = 0; // init
+#endif
+
+#if TEST_SAO_W_PREDBF_RECON  
     if( pcSlice->getSPS()->getUseSAO() )
 #else
       // SAO parameter estimation using non-deblocked pixels for LCU bottom and right boundary areas
     if( pcSlice->getSPS()->getUseSAO() && m_pcCfg->getSaoLcuBoundary() )
 #endif
     {
+#if GET_SAO_TIME
+      long long start, end;
+      if (GetTimeStampNs(&start))
+      {
+        printf("GetTimeStampNs() error!\n");
+        start = 0;
+      }
+      else
+      {
+        //printf("start ts = %lld\n", start);
+      }
+#endif
       m_pcSAO->getPreDBFStatistics(pcPic);
+#if GET_SAO_TIME
+      if (GetTimeStampNs(&end))
+      {
+        printf("GetTimeStampNs() error!\n");
+        end = 0;
+      }
+      else
+      {
+        //printf("end ts = %lld\n", end);
+        g_elapsed_time[0] += end - start;
+      }
+#endif
     }
     //-- Loop filter
     Bool bLFCrossTileBoundary = pcSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag();
@@ -1484,6 +1513,18 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
           break;
         case EXECUTE_INLOOPFILTER:
         {
+#if GET_SAO_TIME
+          long long start, end;
+          if (GetTimeStampNs(&start))
+          {
+            printf("GetTimeStampNs() error!\n");
+            start = 0;
+          }
+          else
+          {
+            //printf("start ts = %lld\n", start);
+          }
+#endif
           // set entropy coder for RD
           m_pcEntropyCoder->setEntropyCoder ( m_pcSbacCoder, pcSlice );
           if ( pcSlice->getSPS()->getUseSAO() )
@@ -1492,18 +1533,6 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
             m_pcEntropyCoder->setBitstream( m_pcBitCounter );
             Bool sliceEnabled[NUM_SAO_COMPONENTS];
             m_pcSAO->initRDOCabacCoder(m_pcEncTop->getRDGoOnSbacCoder(), pcSlice);
-#if GET_SAO_TIME
-            long long start, end;
-            if (GetTimeStampNs(&start))
-            {
-              printf("GetTimeStampNs() error!\n");
-              start = 0;
-            }
-            else
-            {
-              printf("start ts = %lld\n", start);
-            }
-#endif
             m_pcSAO->SAOProcess(pcPic
               , sliceEnabled
               , pcPic->getSlice(0)->getLambdas()
@@ -1511,18 +1540,6 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
               , m_pcCfg->getSaoLcuBoundary()
 #endif
               );
-#if GET_SAO_TIME
-            if (GetTimeStampNs(&end))
-            {
-              printf("GetTimeStampNs() error!\n");
-              end = 0;
-            }
-            else
-            {
-              printf("end ts = %lld\n", end);
-              printf("SAOProcess() elapsed time (ns) = %lld\n", end - start);
-            }
-#endif
             m_pcSAO->PCMLFDisableProcess(pcPic);
 
             //assign SAO slice header
@@ -1533,6 +1550,19 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
               pcPic->getSlice(s)->setSaoEnabledFlagChroma(sliceEnabled[SAO_Cb]);
             }
           }
+#if GET_SAO_TIME
+          if (GetTimeStampNs(&end))
+          {
+            printf("GetTimeStampNs() error!\n");
+            end = 0;
+          }
+          else
+          {
+            //printf("end ts = %lld\n", end);
+            g_elapsed_time[0] += end-start;
+            printf("SAO enc. time = %lld ns\n", g_elapsed_time[0]);
+          }
+#endif
           processingState = ENCODE_SLICE;
         }
           break;
