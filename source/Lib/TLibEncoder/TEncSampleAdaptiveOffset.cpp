@@ -250,37 +250,46 @@ Void TEncSampleAdaptiveOffset::initRDOCabacCoder(TEncSbac* pcRDGoOnSbacCoder, TC
 
 Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, const Double *lambdas
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
-                                         , Bool isPreDBFSamplesUsed
+  , Bool isPreDBFSamplesUsed
 #endif
-                                          )
+  )
 {
 #if !TEST_SAO_W_PREDBF_RECON  
   TComPicYuv* orgYuv = pPic->getPicYuvOrg();
 #endif
-  TComPicYuv* resYuv= pPic->getPicYuvRec();
-  m_lambda[SAO_Y]= lambdas[0]; m_lambda[SAO_Cb]= lambdas[1]; m_lambda[SAO_Cr]= lambdas[2];
+  TComPicYuv* resYuv = pPic->getPicYuvRec();
+  m_lambda[SAO_Y] = lambdas[0]; m_lambda[SAO_Cb] = lambdas[1]; m_lambda[SAO_Cr] = lambdas[2];
   TComPicYuv* srcYuv = m_tempPicYuv;
   resYuv->copyToPic(srcYuv);
   srcYuv->setBorderExtension(false);
   srcYuv->extendPicBorder();
 
 #if !TEST_SAO_GETSTATS_REORDER
+#if GET_SAO_TIME
+  GetTimeStampNs(&g_sao_time_stamp[4]);
+#endif
 #if !TEST_SAO_W_PREDBF_RECON  
   //collect statistics
   getStatistics(m_statData, orgYuv, srcYuv, pPic);
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
-  if(isPreDBFSamplesUsed)
+  if (isPreDBFSamplesUsed)
   {
     addPreDBFStatistics(m_statData);
   }
 #endif
 #endif
+#if GET_SAO_TIME
+  GetTimeStampNs(&g_sao_time_stamp[5]);
+#endif
 #endif
   //slice on/off 
-  decidePicParams(sliceEnabled, pPic->getSlice(0)->getDepth()); 
+  decidePicParams(sliceEnabled, pPic->getSlice(0)->getDepth());
 #if TEST_SAO_GETSTATS_REORDER
   if (sliceEnabled[SAO_Y] || sliceEnabled[SAO_Cb] || sliceEnabled[SAO_Cr])
   {
+#if GET_SAO_TIME
+    GetTimeStampNs(&g_sao_time_stamp[4]);
+#endif
 #if !TEST_SAO_W_PREDBF_RECON  
     //collect statistics
     getStatistics(m_statData, orgYuv, srcYuv, pPic);
@@ -290,6 +299,9 @@ Void TEncSampleAdaptiveOffset::SAOProcess(TComPic* pPic, Bool* sliceEnabled, con
       addPreDBFStatistics(m_statData);
     }
 #endif
+#endif
+#if GET_SAO_TIME
+    GetTimeStampNs(&g_sao_time_stamp[5]);
 #endif
   }
 #endif
@@ -929,9 +941,16 @@ Void TEncSampleAdaptiveOffset::decideBlkParams(TComPic* pic, Bool* sliceEnabled,
 #endif
 
     //apply reconstructed offsets
+#if GET_SAO_TIME
+    GetTimeStampNs(&g_sao_time_stamp[6]);
+#endif
     reconParams[ctu] = codedParams[ctu];
     reconstructBlkSAOParam(reconParams[ctu], mergeList);
     offsetCTU(ctu, srcYuv, resYuv, reconParams[ctu], pic);
+#if GET_SAO_TIME
+    GetTimeStampNs(&g_sao_time_stamp[7]);
+    g_sao_elapsed_time[2] += g_sao_time_stamp[7] - g_sao_time_stamp[6];
+#endif
   } //ctu
 
 #if PRINT_SAO_MODES

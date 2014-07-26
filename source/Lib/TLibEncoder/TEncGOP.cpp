@@ -956,8 +956,15 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
     pcSlice = pcPic->getSlice(0);
 
 #if GET_SAO_TIME
+    //for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 3; i++)
+    {
+      g_sao_elapsed_time[i] = 0; // init
+    }
     for (int i = 0; i < 10; i++)
-      g_elapsed_time[i] = 0; // init
+    {
+      g_sao_time_stamp[i] = 0; // init
+    }
 #endif
 
 #if TEST_SAO_W_PREDBF_RECON  
@@ -969,8 +976,9 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
     {
 #if GET_SAO_TIME
       long long start, end;
-      if (GetTimeStampNs(&start))
-      {
+      //if (GetTimeStampNs(&start))
+      if (GetTimeStampNs(&g_sao_time_stamp[0]))
+        {
         printf("GetTimeStampNs() error!\n");
         start = 0;
       }
@@ -981,7 +989,8 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
 #endif
       m_pcSAO->getPreDBFStatistics(pcPic);
 #if GET_SAO_TIME
-      if (GetTimeStampNs(&end))
+      //if (GetTimeStampNs(&end))
+      if (GetTimeStampNs(&g_sao_time_stamp[1]))
       {
         printf("GetTimeStampNs() error!\n");
         end = 0;
@@ -989,7 +998,9 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
       else
       {
         //printf("end ts = %lld\n", end);
-        g_elapsed_time[0] += end - start;
+        //g_sao_elapsed_time[0] += end - start;
+        g_sao_elapsed_time[0] += g_sao_time_stamp[1] - g_sao_time_stamp[0];
+        g_sao_elapsed_time[1] += g_sao_time_stamp[1] - g_sao_time_stamp[0];
       }
 #endif
     }
@@ -1515,7 +1526,8 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
         {
 #if GET_SAO_TIME
           long long start, end;
-          if (GetTimeStampNs(&start))
+          //if (GetTimeStampNs(&start))
+          if (GetTimeStampNs(&g_sao_time_stamp[2]))
           {
             printf("GetTimeStampNs() error!\n");
             start = 0;
@@ -1551,7 +1563,8 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
             }
           }
 #if GET_SAO_TIME
-          if (GetTimeStampNs(&end))
+          //if (GetTimeStampNs(&end))
+          if (GetTimeStampNs(&g_sao_time_stamp[3]))
           {
             printf("GetTimeStampNs() error!\n");
             end = 0;
@@ -1559,8 +1572,18 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
           else
           {
             //printf("end ts = %lld\n", end);
-            g_elapsed_time[0] += end-start;
-            printf("SAO enc. time = %lld ns\n", g_elapsed_time[0]);
+            //g_sao_elapsed_time[0] += end - start;
+            g_sao_elapsed_time[0] += g_sao_time_stamp[3] - g_sao_time_stamp[2];
+            g_sao_elapsed_time[1] += g_sao_time_stamp[5] - g_sao_time_stamp[4];
+            g_sao_elapsed_time[3] += g_sao_elapsed_time[0];
+            g_sao_elapsed_time[4] += g_sao_elapsed_time[1];
+            g_sao_elapsed_time[5] += g_sao_elapsed_time[2];
+#if PRINT_SAO_TIME_0
+            printf("SAO total enc. time       = %15lld ns\n", g_sao_elapsed_time[0]);
+            printf("SAO stat. collection time = %15lld ns\n", g_sao_elapsed_time[1]);
+            printf("SAO reconstruction time   = %15lld ns\n", g_sao_elapsed_time[2]);
+            printf("SAO others                = %15lld ns\n", g_sao_elapsed_time[0] - g_sao_elapsed_time[1] - g_sao_elapsed_time[2]);
+#endif
           }
 #endif
           processingState = ENCODE_SLICE;
@@ -1913,8 +1936,11 @@ Void TEncGOP::printOutSummary(UInt uiNumAllPicCoded, bool isField)
   
   //-- all
   printf( "\n\nSUMMARY --------------------------------------------------------\n" );
+#if PRINT_SAO_TIME_1
+  m_gcAnalyzeAll.printSaoTimeOut('a');
+#else
   m_gcAnalyzeAll.printOut('a');
-  
+#endif
   printf( "\n\nI Slices--------------------------------------------------------\n" );
   m_gcAnalyzeI.printOut('i');
   

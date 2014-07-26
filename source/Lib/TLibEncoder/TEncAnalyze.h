@@ -91,7 +91,7 @@ public:
   {
     Double dFps     =   m_dFrmRate; //--CFG_KDY
     Double dScale   = dFps / 1000 / (Double)m_uiNumPic;
-    
+
     printf( "\tTotal Frames |  "   "Bitrate    "  "Y-PSNR    "  "U-PSNR    "  "V-PSNR \n" );
     //printf( "\t------------ "  " ----------"   " -------- "  " -------- "  " --------\n" );
     printf( "\t %8d    %c"          "%12.4lf  "    "%8.4lf  "   "%8.4lf  "    "%8.4lf\n",
@@ -101,7 +101,25 @@ public:
            getPsnrU() / (Double)getNumPic(),
            getPsnrV() / (Double)getNumPic() );
   }
-  
+#if PRINT_SAO_TIME_1
+  Void    printSaoTimeOut(Char cDelim)
+  {
+    Double dFps = m_dFrmRate; //--CFG_KDY
+    Double dScale = dFps / 1000 / (Double)m_uiNumPic;
+
+    extern long long g_sao_elapsed_time[10];
+
+    printf("\tTotal Frames |  "   "SAO total (ns)  "  "Stat collection "  "Reconstruction  "  "Others \n");
+    //printf("\t------------ "  " ----------"   " -------- "  " -------- "  " --------\n");
+    printf("\t %8d    %c"          "%16lld"    "%16lld"   "%16lld"    "%16lld\n",
+      getNumPic(), cDelim,
+      g_sao_elapsed_time[3],
+      g_sao_elapsed_time[4],
+      g_sao_elapsed_time[5],
+      g_sao_elapsed_time[3] - g_sao_elapsed_time[4] - g_sao_elapsed_time[5]);
+  }
+#endif
+
   Void    printSummaryOut ()
   {
     FILE* pFile = fopen ("summaryTotal.txt", "at");

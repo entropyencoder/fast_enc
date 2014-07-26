@@ -49,7 +49,9 @@
 #if 1 // yschoi added
 
 #if GET_SAO_TIME
-long long g_elapsed_time[10] = { 0, };
+// [0]: slice total, [1]: collecting stats, [2]: reconstructing post SAO output, [3]: seq. sum of [0], [4]: seq. sum of [1], [5]: seq. sum of [2], 
+long long g_sao_elapsed_time[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; 
+long long g_sao_time_stamp[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 // Return the current wall clock time in nanosecond
 int GetTimeStampNs(long long *ts)

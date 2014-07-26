@@ -390,7 +390,13 @@ Void TAppEncTop::encode()
     pcPicYuvOrg->create( m_iSourceWidth, m_iSourceHeight, m_uiMaxCUWidth, m_uiMaxCUHeight, m_uiMaxCUDepth );
   }
   
-  while ( !bEos )
+#if GET_SAO_TIME
+  for (int i = 0; i < 10; i++)
+  {
+    g_sao_elapsed_time[i] = 0; // init
+  }
+#endif
+  while (!bEos)
   {
     // get buffers
     xGetBuffer(pcPicYuvRec);

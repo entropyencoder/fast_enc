@@ -43,7 +43,7 @@
 
 #if 1     // added by yschoi
 
-#define GET_SAO_TIME                1 //0   // get SAOProcess() execution time
+#define GET_SAO_TIME                1 //0   // measure SAOProcess() execution time
 #define PRINT_SAO_MODES             0   // Print LCU-level SAO types after encoding
 #define PRINT_SAO_COSTS             0   
 #define TEST_SAO_CTU_BND            0      
@@ -59,6 +59,11 @@
 #define TEST_SAO_EO3_ONLY           0   
 #define TEST_SAO_BO_ONLY            0   
 #define TEST_NO_SAO_SLICE_DEC       0   // Disable HM's slice-level SAO decision (actually early termination by simple equations)
+
+// items to want to test, will be implemented soon
+#define PRINT_SAO_TIME_0            1 //0   // print slice-level SAO encoding time 
+#define PRINT_SAO_TIME_1            1 //0   // print sequence SAO encoding time replacing bitrate and PSNR summary
+#define TEST_SAO_DOWNSAMPLED_0      0   // get SAO-related statistics with 1/2 downsampled recon
 
 // items to want to test, not implemented yet
 #define TEST_FAST_SAO_EO_INTRA_DIR  0   

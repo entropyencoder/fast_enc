@@ -58,7 +58,8 @@
 
 extern  int GetTimeStampNs(long long *ts);
 
-extern long long g_elapsed_time[10];
+extern long long g_sao_elapsed_time[10];
+extern long long g_sao_time_stamp[10];
 
 #endif
 
