@@ -109,7 +109,7 @@ public:
 
     extern long long g_sao_elapsed_time[10];
 
-    printf("\tTotal Frames |  "   "SAO total (ns)  "  "Stat collection "  "Reconstruction  "  "Others \n");
+    printf("\tTotal Frames |  "   "SAO total (ns)"  " Stat collection"  "  Reconstruction"  "          Others\n");
     //printf("\t------------ "  " ----------"   " -------- "  " -------- "  " --------\n");
     printf("\t %8d    %c"          "%16lld"    "%16lld"   "%16lld"    "%16lld\n",
       getNumPic(), cDelim,

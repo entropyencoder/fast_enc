@@ -643,6 +643,8 @@ Void TEncSampleAdaptiveOffset::deriveModeNewRDO(Int ctu, std::vector<SAOBlkParam
     Int typeIdc = SAO_TYPE_EO_3;
 #elif TEST_SAO_BO_ONLY
     Int typeIdc = SAO_TYPE_BO;
+#elif TEST_SAO_EO0_BO_ONLY
+    for (Int typeIdc = SAO_TYPE_EO_0; typeIdc< NUM_SAO_NEW_TYPES; typeIdc += SAO_TYPE_BO - SAO_TYPE_EO_0)
 #else
     for (Int typeIdc = 0; typeIdc< NUM_SAO_NEW_TYPES; typeIdc++)
 #endif
@@ -708,6 +710,8 @@ Void TEncSampleAdaptiveOffset::deriveModeNewRDO(Int ctu, std::vector<SAOBlkParam
   Int typeIdc = SAO_TYPE_EO_3;
 #elif TEST_SAO_BO_ONLY
   Int typeIdc = SAO_TYPE_BO;
+#elif TEST_SAO_EO0_BO_ONLY
+  for (Int typeIdc = SAO_TYPE_EO_0; typeIdc< NUM_SAO_NEW_TYPES; typeIdc += SAO_TYPE_BO - SAO_TYPE_EO_0)
 #else
   for (Int typeIdc = 0; typeIdc< NUM_SAO_NEW_TYPES; typeIdc++)
 #endif
@@ -1103,6 +1107,8 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
   Int typeIdx = SAO_TYPE_EO_3;
 #elif TEST_SAO_BO_ONLY
   Int typeIdx = SAO_TYPE_BO;
+#elif TEST_SAO_EO0_BO_ONLY
+  for (Int typeIdx = SAO_TYPE_EO_0; typeIdx< NUM_SAO_NEW_TYPES; typeIdx += SAO_TYPE_BO - SAO_TYPE_EO_0)
 #else
   for (Int typeIdx = 0; typeIdx< NUM_SAO_NEW_TYPES; typeIdx++)
 #endif
@@ -1143,15 +1149,17 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
         endX = isRightAvail ? (width - skipLinesR[typeIdx]) : (width - 1);
 #endif
 #endif
-        for (y=0; y<endY; y++)
+        for (y = 0; y<endY; y++)
         {
           signLeft = (Char)m_sign[srcLine[startX] - srcLine[startX-1]];
-          for (x=startX; x<endX; x++)
+          for (x = startX; x < endX; x++)
           {
-            signRight =  (Char)m_sign[srcLine[x] - srcLine[x+1]]; 
-            edgeType  =  signRight + signLeft;
-            signLeft  = -signRight;
-
+            signRight = (Char)m_sign[srcLine[x] - srcLine[x + 1]];
+            edgeType = signRight + signLeft;
+            signLeft = -signRight;
+#if TEST_SAO_DOWNSAMPLED_0
+            if ((x % 2) == 1) continue;
+#endif
             diff [edgeType] += (orgLine[x] - srcLine[x]);
             count[edgeType] ++;
           }
@@ -1175,6 +1183,9 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
                 edgeType  =  signRight + signLeft;
                 signLeft  = -signRight;
 
+#if TEST_SAO_DOWNSAMPLED_0
+                if ((x % 2) == 1) continue;
+#endif
                 diff [edgeType] += (orgLine[x] - srcLine[x]);
                 count[edgeType] ++;
               }
@@ -1245,7 +1256,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
             edgeType  = signDown + signUpLine[x];
             signUpLine[x]= -signDown;
 
-            diff [edgeType] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+            if ((x % 2) == 1) continue;
+#endif
+            diff[edgeType] += (orgLine[x] - srcLine[x]);
             count[edgeType] ++;
           }
           srcLine += srcStride;
@@ -1267,7 +1281,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
               for (x=startX; x<endX; x++)
               {
                 edgeType = m_sign[srcLine[x] - srcLineBelow[x]] + m_sign[srcLine[x] - srcLineAbove[x]];
-                diff [edgeType] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+                if ((x % 2) == 1) continue;
+#endif
+                diff[edgeType] += (orgLine[x] - srcLine[x]);
                 count[edgeType] ++;
               }
               srcLine  += srcStride;
@@ -1332,7 +1349,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
         for(x=firstLineStartX; x<firstLineEndX; x++)
         {
           edgeType = m_sign[srcLine[x] - srcLineAbove[x-1]] - signUpLine[x+1];
-          diff [edgeType] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+          if ((x % 2) == 1) continue;
+#endif
+          diff[edgeType] += (orgLine[x] - srcLine[x]);
           count[edgeType] ++;
         }
         srcLine  += srcStride;
@@ -1348,7 +1368,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
           {
             signDown = (Char)m_sign[srcLine[x] - srcLineBelow[x+1]] ;
             edgeType = signDown + signUpLine[x];
-            diff [edgeType] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+            if ((x % 2) == 1) continue;
+#endif
+            diff[edgeType] += (orgLine[x] - srcLine[x]);
             count[edgeType] ++;
 
             signDownLine[x+1] = -signDown; 
@@ -1378,7 +1401,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
               for (x=startX; x< endX; x++)
               {
                 edgeType = m_sign[srcLine[x] - srcLineBelow[x+1]] + m_sign[srcLine[x] - srcLineAbove[x-1]];
-                diff [edgeType] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+                if ((x % 2) == 1) continue;
+#endif
+                diff[edgeType] += (orgLine[x] - srcLine[x]);
                 count[edgeType] ++;
               }
               srcLine  += srcStride;
@@ -1443,7 +1469,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
         for(x=firstLineStartX; x<firstLineEndX; x++)
         {
           edgeType = m_sign[srcLine[x] - srcLineAbove[x+1]] - signUpLine[x-1];
-          diff [edgeType] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+          if ((x % 2) == 1) continue;
+#endif
+          diff[edgeType] += (orgLine[x] - srcLine[x]);
           count[edgeType] ++;
         }
 
@@ -1460,7 +1489,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
             signDown = (Char)m_sign[srcLine[x] - srcLineBelow[x-1]] ;
             edgeType = signDown + signUpLine[x];
 
-            diff [edgeType] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+            if ((x % 2) == 1) continue;
+#endif
+            diff[edgeType] += (orgLine[x] - srcLine[x]);
             count[edgeType] ++;
 
             signUpLine[x-1] = -signDown; 
@@ -1485,7 +1517,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
               for (x=startX; x<endX; x++)
               {
                 edgeType = m_sign[srcLine[x] - srcLineBelow[x-1]] + m_sign[srcLine[x] - srcLineAbove[x+1]];
-                diff [edgeType] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+                if ((x % 2) == 1) continue;
+#endif
+                diff[edgeType] += (orgLine[x] - srcLine[x]);
                 count[edgeType] ++;
               }
               srcLine  += srcStride;
@@ -1528,7 +1563,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
           {
 
             Int bandIdx= srcLine[x] >> shiftBits; 
-            diff [bandIdx] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+            if ((x % 2) == 1) continue;
+#endif
+            diff[bandIdx] += (orgLine[x] - srcLine[x]);
             count[bandIdx] ++;
           }
           srcLine += srcStride;
@@ -1547,7 +1585,10 @@ Void TEncSampleAdaptiveOffset::getBlkStats(Int compIdx, SAOStatData* statsDataTy
               for (x=startX; x< endX; x++)
               {
                 Int bandIdx= srcLine[x] >> shiftBits; 
-                diff [bandIdx] += (orgLine[x] - srcLine[x]);
+#if TEST_SAO_DOWNSAMPLED_0
+                if ((x % 2) == 1) continue;
+#endif
+                diff[bandIdx] += (orgLine[x] - srcLine[x]);
                 count[bandIdx] ++;
               }
               srcLine  += srcStride;
