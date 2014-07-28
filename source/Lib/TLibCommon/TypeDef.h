@@ -63,14 +63,14 @@
 #define TEST_SAO_EO0_BO_ONLY        0   // Only EO_0 and BO are allowed. (i.e. No line buffer for SAO)
 #define TEST_NO_SAO_SLICE_DEC       0   // Disable HM's slice-level SAO decision (actually early termination by simple equations)
 #define TEST_SAO_DOWNSAMPLED_0      0   // SAO stats only for every 2 pixels in hor. dir (i.e. EO categorization with original recon)
-
-// items to want to test, will be implemented soon
+#define TEST_SAO_DOWNSAMPLED_1      0   // SAO stats only for every 2 pixels in ver. dir (i.e. EO categorization with original recon)
 
 // items to want to test, not implemented yet
-#define TEST_SAO_DOWNSAMPLED_1      0   // SAO stats only for every 2 pixels in ver. dir (i.e. EO categorization with original recon)
-#define TEST_SAO_DOWNSAMPLED_2      0   // SAO stats with 1/2 downsampled recon in hor. dir (i.e. EO categorization with downsampled recon)
-#define TEST_SAO_DOWNSAMPLED_3      0   // SAO stats with 1/2 downsampled recon in ver. dir (i.e. EO categorization with downsampled recon)
+//#define TEST_SAO_DOWNSAMPLED_2      0   // SAO stats with 1/2 downsampled recon in hor. dir (i.e. EO categorization with downsampled recon)
+//#define TEST_SAO_DOWNSAMPLED_3      0   // SAO stats with 1/2 downsampled recon in ver. dir (i.e. EO categorization with downsampled recon)
 #define TEST_SAO_DOWNSAMPLED_4      0   // SAO stats only for every 2 pixels in EO direction-adaptive way (i.e. EO categorization with original recon)
+#define TEST_SAO_EO0_EO1_ONLY       0   
+#define TEST_SAO_EO2_EO3_ONLY       0   
 #define TEST_FAST_SAO_EO_INTRA_DIR  0   
 #define TEST_FAST_SAO_EO_EDGE_DIR   0   
 #define TEST_FAST_SAO_BO_DC_COEF    0   
