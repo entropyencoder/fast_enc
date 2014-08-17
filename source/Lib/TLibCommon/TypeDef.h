@@ -44,15 +44,15 @@
 #if 1     // added by yschoi
 
 #define GET_SAO_TIME                1 //0   // measure SAOProcess() execution time
-#define PRINT_SAO_TIME_0            1 //0   // print slice-level SAO encoding time 
-#define PRINT_SAO_TIME_1            0   // print sequence SAO encoding time replacing bitrate and PSNR summary
+#define PRINT_SAO_TIME_C0           0   // print slice-level SAO encoding time 
+#define PRINT_SAO_TIME_C1           1 //0   // print sequence SAO encoding time by replacing I slices' bitrate and PSNR summary
 #define PRINT_SAO_MODES             0   // Print LCU-level SAO types after encoding
 #define PRINT_SAO_COSTS             0   
 #define TEST_SAO_CTU_BND            0      
 #define	TEST_SAO_GETSTATS_REORDER	  0   // Move getStatistics() after decidePicParams() and skip getStatistics() if all sliceEnabled[3] are disabled.
 #define TEST_SAO_W_PREDBF_RECON     0   // estimate SAO parameters with pre-deblock recon (regardless of 'SaoLcuBoundary' in cfg)
-#define TEST_DELAYED_SAO_0          0   // perform delayed SAO while estimating 'merge up' with the left above CTU's SAO mode
-#define TEST_DELAYED_SAO_1          0   // perform delayed SAO while estimating 'merge up' with the above CTU's SAO mode 
+#define TEST_DELAYED_SAO_C0         0   // perform delayed SAO while estimating 'merge up' with the left above CTU's SAO mode
+#define TEST_DELAYED_SAO_C1         0   // perform delayed SAO while estimating 'merge up' with the above CTU's SAO mode 
 //#define TEST_NO_SAO_ITER_OFFSET     0   
 #define TEST_NO_SAO_MERGE           0   
 #define TEST_SAO_EO0_ONLY           0   
@@ -62,13 +62,13 @@
 #define TEST_SAO_BO_ONLY            0   
 #define TEST_SAO_EO0_BO_ONLY        0   // Only EO_0 and BO are allowed. (i.e. No line buffer for SAO)
 #define TEST_NO_SAO_SLICE_DEC       0   // Disable HM's slice-level SAO decision (actually early termination by simple equations)
-#define TEST_SAO_DOWNSAMPLED_0      0   // SAO stats only for every 2 pixels in hor. dir (i.e. EO categorization with original recon)
-#define TEST_SAO_DOWNSAMPLED_1      0   // SAO stats only for every 2 pixels in ver. dir (i.e. EO categorization with original recon)
+#define TEST_SAO_DOWNSAMPLED_C0     0   // SAO stats only for every 2 pixels in hor. dir (i.e. EO categorization with original recon)
+#define TEST_SAO_DOWNSAMPLED_C1     0   // SAO stats only for every 2 pixels in ver. dir (i.e. EO categorization with original recon)
 
 // items to want to test, not implemented yet
-//#define TEST_SAO_DOWNSAMPLED_2      0   // SAO stats with 1/2 downsampled recon in hor. dir (i.e. EO categorization with downsampled recon)
-//#define TEST_SAO_DOWNSAMPLED_3      0   // SAO stats with 1/2 downsampled recon in ver. dir (i.e. EO categorization with downsampled recon)
-#define TEST_SAO_DOWNSAMPLED_4      0   // SAO stats only for every 2 pixels in EO direction-adaptive way (i.e. EO categorization with original recon)
+//#define TEST_SAO_DOWNSAMPLED_C2     0   // SAO stats with 1/2 downsampled recon in hor. dir (i.e. EO categorization with downsampled recon)
+//#define TEST_SAO_DOWNSAMPLED_C3     0   // SAO stats with 1/2 downsampled recon in ver. dir (i.e. EO categorization with downsampled recon)
+#define TEST_SAO_DOWNSAMPLED_C4     0   // SAO stats only for every 2 pixels in EO direction-adaptive way (i.e. EO categorization with original recon)
 #define TEST_SAO_EO0_EO1_ONLY       0   
 #define TEST_SAO_EO2_EO3_ONLY       0   
 #define TEST_FAST_SAO_EO_INTRA_DIR  0   

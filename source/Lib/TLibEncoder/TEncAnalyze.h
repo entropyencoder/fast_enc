@@ -101,12 +101,9 @@ public:
            getPsnrU() / (Double)getNumPic(),
            getPsnrV() / (Double)getNumPic() );
   }
-#if PRINT_SAO_TIME_1
+#if PRINT_SAO_TIME_C1
   Void    printSaoTimeOut(Char cDelim)
   {
-    Double dFps = m_dFrmRate; //--CFG_KDY
-    Double dScale = dFps / 1000 / (Double)m_uiNumPic;
-
     extern long long g_sao_elapsed_time[10];
 
     printf("\tTotal Frames |  "   "SAO total (ns)"  " Stat collection"  "  Reconstruction"  "          Others\n");

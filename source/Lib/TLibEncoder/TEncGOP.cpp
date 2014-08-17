@@ -1578,7 +1578,7 @@ Void TEncGOP::compressGOP( Int iPOCLast, Int iNumPicRcvd, TComList<TComPic*>& rc
             g_sao_elapsed_time[3] += g_sao_elapsed_time[0];
             g_sao_elapsed_time[4] += g_sao_elapsed_time[1];
             g_sao_elapsed_time[5] += g_sao_elapsed_time[2];
-#if PRINT_SAO_TIME_0
+#if PRINT_SAO_TIME_C0
             printf("SAO total enc. time       = %15lld ns\n", g_sao_elapsed_time[0]);
             printf("SAO stat. collection time = %15lld ns\n", g_sao_elapsed_time[1]);
             printf("SAO reconstruction time   = %15lld ns\n", g_sao_elapsed_time[2]);
@@ -1936,14 +1936,15 @@ Void TEncGOP::printOutSummary(UInt uiNumAllPicCoded, bool isField)
   
   //-- all
   printf( "\n\nSUMMARY --------------------------------------------------------\n" );
-#if PRINT_SAO_TIME_1
+  m_gcAnalyzeAll.printOut('a');
+
+  printf( "\n\nI Slices--------------------------------------------------------\n" );
+#if PRINT_SAO_TIME_C1
   m_gcAnalyzeAll.printSaoTimeOut('a');
 #else
-  m_gcAnalyzeAll.printOut('a');
-#endif
-  printf( "\n\nI Slices--------------------------------------------------------\n" );
   m_gcAnalyzeI.printOut('i');
-  
+#endif
+
   printf( "\n\nP Slices--------------------------------------------------------\n" );
   m_gcAnalyzeP.printOut('p');
   
