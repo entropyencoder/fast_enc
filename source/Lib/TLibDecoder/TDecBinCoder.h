@@ -1,9 +1,9 @@
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
- * granted under this license.  
+ * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,11 +35,15 @@
     \brief    binary entropy decoder interface
 */
 
-#ifndef __TDEC_BIN_CODER__
-#define __TDEC_BIN_CODER__
+#ifndef __TDECBINCODER__
+#define __TDECBINCODER__
 
 #include "TLibCommon/ContextModel.h"
 #include "TLibCommon/TComBitStream.h"
+
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+class TComCodingStatisticsClassType;
+#endif
 
 //! \ingroup TLibDecoder
 //! \{
@@ -53,19 +57,22 @@ public:
 
   virtual Void  start             ()                                          = 0;
   virtual Void  finish            ()                                          = 0;
-  virtual Void  flush            ()                                           = 0;
 
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+  virtual Void  decodeBin         ( UInt& ruiBin, ContextModel& rcCtxModel, const class TComCodingStatisticsClassType &whichStat )  = 0;
+  virtual Void  decodeBinEP       ( UInt& ruiBin                          , const class TComCodingStatisticsClassType &whichStat )  = 0;
+  virtual Void  decodeBinsEP      ( UInt& ruiBins, Int numBins            , const class TComCodingStatisticsClassType &whichStat )  = 0;
+#else
   virtual Void  decodeBin         ( UInt& ruiBin, ContextModel& rcCtxModel )  = 0;
   virtual Void  decodeBinEP       ( UInt& ruiBin                           )  = 0;
   virtual Void  decodeBinsEP      ( UInt& ruiBins, Int numBins             )  = 0;
-  virtual Void  decodeBinTrm      ( UInt& ruiBin                           )  = 0;
-  
-  virtual Void  resetBac          ()                                          = 0;
-#if !REMOVE_BURST_IPCM
-  virtual Void  decodeNumSubseqIPCM( Int& numSubseqIPCM )                  = 0;
 #endif
-  virtual Void  decodePCMAlignBits()                                          = 0;
-  virtual Void  xReadPCMCode      ( UInt uiLength, UInt& ruiCode)              = 0;
+
+  virtual Void  align             ()                                          = 0;
+
+  virtual Void  decodeBinTrm      ( UInt& ruiBin                           )  = 0;
+
+  virtual Void  xReadPCMCode      ( UInt uiLength, UInt& ruiCode)             = 0;
 
   virtual ~TDecBinIf() {}
 

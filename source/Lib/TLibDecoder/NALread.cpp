@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,55 +44,60 @@
 #include "NALread.h"
 #include "TLibCommon/NAL.h"
 #include "TLibCommon/TComBitStream.h"
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+#include "TLibCommon/TComCodingStatistics.h"
+#endif
 
 using namespace std;
 
 //! \ingroup TLibDecoder
 //! \{
-#if HM9_NALU_TYPES
-static void convertPayloadToRBSP(vector<uint8_t>& nalUnitBuf, TComInputBitstream *pcBitstream, Bool isVclNalUnit)
-#else
-static void convertPayloadToRBSP(vector<uint8_t>& nalUnitBuf, TComInputBitstream *pcBitstream)
-#endif
+static Void convertPayloadToRBSP(vector<uint8_t>& nalUnitBuf, TComInputBitstream *bitstream, Bool isVclNalUnit)
 {
   UInt zeroCount = 0;
   vector<uint8_t>::iterator it_read, it_write;
 
-  for (it_read = it_write = nalUnitBuf.begin(); it_read != nalUnitBuf.end(); it_read++, it_write++)
+  UInt pos = 0;
+  bitstream->clearEmulationPreventionByteLocation();
+  for (it_read = it_write = nalUnitBuf.begin(); it_read != nalUnitBuf.end(); it_read++, it_write++, pos++)
   {
     assert(zeroCount < 2 || *it_read >= 0x03);
     if (zeroCount == 2 && *it_read == 0x03)
     {
+      bitstream->pushEmulationPreventionByteLocation( pos );
+      pos++;
       it_read++;
       zeroCount = 0;
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+      TComCodingStatistics::IncrementStatisticEP(STATS__EMULATION_PREVENTION_3_BYTES, 8, 0);
+#endif
       if (it_read == nalUnitBuf.end())
       {
         break;
       }
+      assert(*it_read <= 0x03);
     }
     zeroCount = (*it_read == 0x00) ? zeroCount+1 : 0;
     *it_write = *it_read;
   }
   assert(zeroCount == 0);
-  
-#if HM9_NALU_TYPES
+
   if (isVclNalUnit)
   {
     // Remove cabac_zero_word from payload if present
     Int n = 0;
-    
+
     while (it_write[-1] == 0x00)
     {
       it_write--;
       n++;
     }
-    
+
     if (n > 0)
     {
-      printf("\nDetected %d instances of cabac_zero_word", n/2);      
+      printf("\nDetected %d instances of cabac_zero_word", n/2);
     }
   }
-#endif
 
   nalUnitBuf.resize(it_write - nalUnitBuf.begin());
 }
@@ -107,13 +112,16 @@ Void readNalUnitHeader(InputNALUnit& nalu)
   nalu.m_reservedZero6Bits = bs.read(6);       // nuh_reserved_zero_6bits
   assert(nalu.m_reservedZero6Bits == 0);
   nalu.m_temporalId = bs.read(3) - 1;             // nuh_temporal_id_plus1
+#if RExt__DECODER_DEBUG_BIT_STATISTICS
+  TComCodingStatistics::IncrementStatisticEP(STATS__NAL_UNIT_HEADER_BITS, 1+6+6+3, 0);
+#endif
 
   if ( nalu.m_temporalId )
   {
-    assert( nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_BLA
-         && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_BLANT
+    assert( nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_BLA_W_LP
+         && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_BLA_W_RADL
          && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_BLA_N_LP
-         && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_IDR
+         && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_IDR_W_RADL
          && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_IDR_N_LP
          && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_CRA
          && nalu.m_nalUnitType != NAL_UNIT_VPS
@@ -123,7 +131,7 @@ Void readNalUnitHeader(InputNALUnit& nalu)
   }
   else
   {
-    assert( nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_TLA
+    assert( nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_TSA_R
          && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_TSA_N
          && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_STSA_R
          && nalu.m_nalUnitType != NAL_UNIT_CODED_SLICE_STSA_N );
@@ -133,17 +141,14 @@ Void readNalUnitHeader(InputNALUnit& nalu)
  * create a NALunit structure with given header values and storage for
  * a bitstream
  */
-void read(InputNALUnit& nalu, vector<uint8_t>& nalUnitBuf)
+Void read(InputNALUnit& nalu, vector<uint8_t>& nalUnitBuf)
 {
   /* perform anti-emulation prevention */
   TComInputBitstream *pcBitstream = new TComInputBitstream(NULL);
-#if HM9_NALU_TYPES
   convertPayloadToRBSP(nalUnitBuf, pcBitstream, (nalUnitBuf[0] & 64) == 0);
-#else
-  convertPayloadToRBSP(nalUnitBuf, pcBitstream);
-#endif
-  
+
   nalu.m_Bitstream = new TComInputBitstream(&nalUnitBuf);
+  nalu.m_Bitstream->setEmulationPreventionByteLocation(pcBitstream->getEmulationPreventionByteLocation());
   delete pcBitstream;
   readNalUnitHeader(nalu);
 }

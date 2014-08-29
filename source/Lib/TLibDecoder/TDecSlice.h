@@ -1,9 +1,9 @@
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
- * granted under this license.  
+ * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,29 +64,25 @@ private:
   // access channel
   TDecEntropy*    m_pcEntropyDecoder;
   TDecCu*         m_pcCuDecoder;
-  UInt            m_uiCurrSliceIdx;
 
   TDecSbac*       m_pcBufferSbacDecoders;   ///< line to store temporary contexts, one per column of tiles.
   TDecBinCABAC*   m_pcBufferBinCABACs;
   TDecSbac*       m_pcBufferLowLatSbacDecoders;   ///< dependent tiles: line to store temporary contexts, one per column of tiles.
   TDecBinCABAC*   m_pcBufferLowLatBinCABACs;
-#if DEPENDENT_SLICES
   std::vector<TDecSbac*> CTXMem;
-#endif
-  
+
 public:
   TDecSlice();
   virtual ~TDecSlice();
-  
+
   Void  init              ( TDecEntropy* pcEntropyDecoder, TDecCu* pcMbDecoder );
-  Void  create            ( TComSlice* pcSlice, Int iWidth, Int iHeight, UInt uiMaxWidth, UInt uiMaxHeight, UInt uiMaxDepth );
+  Void  create            ();
   Void  destroy           ();
-  
-  Void  decompressSlice   ( TComInputBitstream* pcBitstream, TComInputBitstream** ppcSubstreams,   TComPic*& rpcPic, TDecSbac* pcSbacDecoder, TDecSbac* pcSbacDecoders );
-#if DEPENDENT_SLICES
+
+  Void  decompressSlice   ( TComInputBitstream** ppcSubstreams,   TComPic*& rpcPic, TDecSbac* pcSbacDecoder, TDecSbac* pcSbacDecoders );
   Void      initCtxMem(  UInt i );
   Void      setCtxMem( TDecSbac* sb, Int b )   { CTXMem[b] = sb; }
-#endif
+  Int       getCtxMemSize( )                   { return (Int)CTXMem.size(); }
 };
 
 
@@ -105,7 +101,7 @@ public:
 
 private:
   ParameterSetMap<TComVPS> m_vpsBuffer;
-  ParameterSetMap<TComSPS> m_spsBuffer; 
+  ParameterSetMap<TComSPS> m_spsBuffer;
   ParameterSetMap<TComPPS> m_ppsBuffer;
 };
 

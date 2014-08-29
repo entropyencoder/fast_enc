@@ -1,9 +1,9 @@
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
- * granted under this license.  
+ * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
     \brief    Rate control manager class
 */
 
-#ifndef _HM_TENCRATECTRL_H_
-#define _HM_TENCRATECTRL_H_
+#ifndef __TENCRATECTRL__
+#define __TENCRATECTRL__
 
 #if _MSC_VER > 1000
 #pragma once
@@ -54,7 +54,6 @@ using namespace std;
 //! \ingroup TLibEncoder
 //! \{
 
-#if RATE_CONTROL_LAMBDA_DOMAIN
 #include "../TLibEncoder/TEncCfg.h"
 #include <list>
 #include <cassert>
@@ -64,6 +63,18 @@ const Int g_RCSmoothWindowSize = 40;
 const Int g_RCMaxPicListSize = 32;
 const Double g_RCWeightPicTargetBitInGOP    = 0.9;
 const Double g_RCWeightPicRargetBitInBuffer = 1.0 - g_RCWeightPicTargetBitInGOP;
+const Int g_RCIterationNum = 20;
+const Double g_RCWeightHistoryLambda = 0.5;
+const Double g_RCWeightCurrentLambda = 1.0 - g_RCWeightHistoryLambda;
+const Int g_RCLCUSmoothWindowSize = 4;
+const Double g_RCAlphaMinValue = 0.05;
+const Double g_RCAlphaMaxValue = 500.0;
+const Double g_RCBetaMinValue  = -3.0;
+const Double g_RCBetaMaxValue  = -0.1;
+
+#define ALPHA     6.7542;
+#define BETA1     1.2517
+#define BETA2     1.7860
 
 struct TRCLCU
 {
@@ -71,8 +82,10 @@ struct TRCLCU
   Int m_QP;     // QP of skip mode is set to g_RCInvalidQPValue
   Int m_targetBits;
   Double m_lambda;
-  Double m_MAD;
+  Double m_bitWeight;
   Int m_numberOfPixel;
+  Double m_costIntra;
+  Int m_targetBitsLeft;
 };
 
 struct TRCParameter
@@ -88,14 +101,14 @@ public:
   ~TEncRCSeq();
 
 public:
-  Void create( Int totalFrames, Int targetBitrate, Int frameRate, Int GOPSize, Int picWidth, Int picHeight, Int LCUWidth, Int LCUHeight, Int numberOfLevel, Bool useLCUSeparateModel );
+  Void create( Int totalFrames, Int targetBitrate, Int frameRate, Int GOPSize, Int picWidth, Int picHeight, Int LCUWidth, Int LCUHeight, Int numberOfLevel, Bool useLCUSeparateModel, Int adaptiveBit );
   Void destroy();
   Void initBitsRatio( Int bitsRatio[] );
   Void initGOPID2Level( Int GOPID2Level[] );
   Void initPicPara( TRCParameter* picPara  = NULL );    // NULL to initial with default value
   Void initLCUPara( TRCParameter** LCUPara = NULL );    // NULL to initial with default value
   Void updateAfterPic ( Int bits );
-  Int  getRefineBitsForIntra( Int orgBits );
+  Void setAllBitRatio( Double basicLambda, Double* equaCoeffA, Double* equaCoeffB );
 
 public:
   Int  getTotalFrames()                 { return m_totalFrames; }
@@ -103,7 +116,7 @@ public:
   Int  getFrameRate()                   { return m_frameRate; }
   Int  getGOPSize()                     { return m_GOPSize; }
   Int  getPicWidth()                    { return m_picWidth; }
-  Int  getPicHeight()                   { return m_picHeight; } 
+  Int  getPicHeight()                   { return m_picHeight; }
   Int  getLCUWidth()                    { return m_LCUWidth; }
   Int  getLCUHeight()                   { return m_LCUHeight; }
   Int  getNumberOfLevel()               { return m_numberOfLevel; }
@@ -133,10 +146,14 @@ public:
   Double getAlphaUpdate()               { return m_alphaUpdate; }
   Double getBetaUpdate()                { return m_betaUpdate; }
 
+  Int    getAdaptiveBits()              { return m_adaptiveBit;  }
+  Double getLastLambda()                { return m_lastLambda;   }
+  Void   setLastLambda( Double lamdba ) { m_lastLambda = lamdba; }
+
 private:
   Int m_totalFrames;
   Int m_targetRate;
-  Int m_frameRate; 
+  Int m_frameRate;
   Int m_GOPSize;
   Int m_picWidth;
   Int m_picHeight;
@@ -159,6 +176,9 @@ private:
   Double m_alphaUpdate;
   Double m_betaUpdate;
   Bool m_useLCUSeparateModel;
+
+  Int m_adaptiveBit;
+  Double m_lastLambda;
 };
 
 class TEncRCGOP
@@ -174,6 +194,8 @@ public:
 
 private:
   Int  xEstGOPTargetBits( TEncRCSeq* encRCSeq, Int GOPSize );
+  Void   xCalEquaCoeff( TEncRCSeq* encRCSeq, Double* lambdaRatio, Double* equaCoeffA, Double* equaCoeffB, Int GOPSize );
+  Double xSolveEqua( Double targetBpp, Double* equaCoeffA, Double* equaCoeffB, Int GOPSize );
 
 public:
   TEncRCSeq* getEncRCSeq()        { return m_encRCSeq; }
@@ -202,23 +224,28 @@ public:
   Void create( TEncRCSeq* encRCSeq, TEncRCGOP* encRCGOP, Int frameLevel, list<TEncRCPic*>& listPreviousPictures );
   Void destroy();
 
-  Double estimatePicLambda( list<TEncRCPic*>& listPreviousPictures );
   Int    estimatePicQP    ( Double lambda, list<TEncRCPic*>& listPreviousPictures );
-  Double getLCUTargetBpp( list<TEncRCPic*>& listPreviousPictures );
-  Double getLCUEstLambda( Double bpp, list<TEncRCPic*>& listPreviousPictures );
+  Int    getRefineBitsForIntra(Int orgBits);
+  Double calculateLambdaIntra(Double alpha, Double beta, Double MADPerPixel, Double bitsPerPixel);
+  Double estimatePicLambda( list<TEncRCPic*>& listPreviousPictures, SliceType eSliceType);
+
+  Void   updateAlphaBetaIntra(Double *alpha, Double *beta);
+
+  Double getLCUTargetBpp(SliceType eSliceType);
+  Double getLCUEstLambdaAndQP(Double bpp, Int clipPicQP, Int *estQP);
+  Double getLCUEstLambda( Double bpp );
   Int    getLCUEstQP( Double lambda, Int clipPicQP );
 
-  Void updateAfterLCU( Int LCUIdx, Int bits, Int QP, Double lambda, Int numOfEffectivePixel, Bool updateLCUParameter = true );
-  Void updateAfterPicture( Int actualHeaderBits, Int actualTotalBits, Double averageQP, Double averageLambda, Double effectivePercentage );
+  Void updateAfterLCU( Int LCUIdx, Int bits, Int QP, Double lambda, Bool updateLCUParameter = true );
+  Void updateAfterPicture( Int actualHeaderBits, Int actualTotalBits, Double averageQP, Double averageLambda, SliceType eSliceType);
 
   Void addToPictureLsit( list<TEncRCPic*>& listPreviousPictures );
-  Double getEffectivePercentage();
   Double calAverageQP();
   Double calAverageLambda();
 
 private:
-  Int xEstPicTargetBits( TEncRCSeq* encRCSeq, TEncRCGOP* encRCGOP, list<TEncRCPic*>& listPreviousPictures, Int frameLevel );
-  Int xEstPicHeaderBits( TEncRCSeq* encRCSeq, TEncRCGOP* encRCGOP, list<TEncRCPic*>& listPreviousPictures, Int frameLevel );
+  Int xEstPicTargetBits( TEncRCSeq* encRCSeq, TEncRCGOP* encRCGOP );
+  Int xEstPicHeaderBits( list<TEncRCPic*>& listPreviousPictures, Int frameLevel );
 
 public:
   TEncRCSeq*      getRCSequence()                         { return m_encRCSeq; }
@@ -228,7 +255,6 @@ public:
   Int  getNumberOfPixel()                                 { return m_numberOfPixel; }
   Int  getNumberOfLCU()                                   { return m_numberOfLCU; }
   Int  getTargetBits()                                    { return m_targetBits; }
-  Void setTargetBits( Int bits )                          { m_targetBits = bits; }
   Int  getEstHeaderBits()                                 { return m_estHeaderBits; }
   Int  getLCULeft()                                       { return m_LCULeft; }
   Int  getBitsLeft()                                      { return m_bitsLeft; }
@@ -238,8 +264,10 @@ public:
   TRCLCU* getLCU()                                        { return m_LCUs; }
   TRCLCU& getLCU( Int LCUIdx )                            { return m_LCUs[LCUIdx]; }
   Int  getPicActualHeaderBits()                           { return m_picActualHeaderBits; }
-  Double getTotalMAD()                                    { return m_totalMAD; }
-  Void   setTotalMAD( Double MAD )                        { m_totalMAD = MAD; }
+  Void setTargetBits( Int bits )                          { m_targetBits = bits; m_bitsLeft = bits;}
+  Void setTotalIntraCost(Double cost)                     { m_totalCostIntra = cost; }
+  Void getLCUInitTargetBits();
+
   Int  getPicActualBits()                                 { return m_picActualBits; }
   Int  getPicActualQP()                                   { return m_picQP; }
   Double getPicActualLambda()                             { return m_picLambda; }
@@ -266,11 +294,11 @@ private:
 
   TRCLCU* m_LCUs;
   Int m_picActualHeaderBits;    // only SH and potential APS
-  Double m_totalMAD;
+  Double m_totalCostIntra;
+  Double m_remainingCostIntra;
   Int m_picActualBits;          // the whole picture, including header
   Int m_picQP;                  // in integer form
   Double m_picLambda;
-  TEncRCPic* m_lastPicture;
 };
 
 class TEncRateCtrl
@@ -280,7 +308,7 @@ public:
   ~TEncRateCtrl();
 
 public:
-  Void init( Int totalFrames, Int targetBitrate, Int frameRate, Int GOPSize, Int picWidth, Int picHeight, Int LCUWidth, Int LCUHeight, Bool keepHierBits, Bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP] );
+  Void init( Int totalFrames, Int targetBitrate, Int frameRate, Int GOPSize, Int picWidth, Int picHeight, Int LCUWidth, Int LCUHeight, Int keepHierBits, Bool useLCUSeparateModel, GOPEntry GOPList[MAX_GOP] );
   Void destroy();
   Void initRCPic( Int frameLevel );
   Void initRCGOP( Int numberOfPictures );
@@ -301,134 +329,6 @@ private:
   list<TEncRCPic*> m_listRCPictures;
   Int        m_RCQP;
 };
-
-#else
-
-// ====================================================================================================================
-// Class definition
-// ====================================================================================================================
-#define MAX_DELTA_QP    2
-#define MAX_CUDQP_DEPTH 0 
-
-typedef struct FrameData
-{
-  Bool       m_isReferenced;
-  Int        m_qp;
-  Int        m_bits;
-  Double     m_costMAD;
-}FrameData;
-
-typedef struct LCUData
-{
-  Int     m_qp;                ///<  coded QP
-  Int     m_bits;              ///<  actually generated bits
-  Int     m_pixels;            ///<  number of pixels for a unit
-  Int     m_widthInPixel;      ///<  number of pixels for width
-  Int     m_heightInPixel;     ///<  number of pixels for height
-  Double  m_costMAD;           ///<  texture complexity for a unit
-}LCUData;
-
-class MADLinearModel
-{
-private:
-  Bool   m_activeOn;
-  Double m_paramY1;
-  Double m_paramY2;
-  Double m_costMADs[3];
-
-public:
-  MADLinearModel ()   {};
-  ~MADLinearModel()   {};
-  
-  Void    initMADLinearModel      ();
-  Double  getMAD                  ();
-  Void    updateMADLiearModel     ();
-  Void    updateMADHistory        (Double costMAD);
-  Bool    IsUpdateAvailable       ()              { return m_activeOn; }
-};
-
-class PixelBaseURQQuadraticModel
-{
-private:
-  Double m_paramHighX1;
-  Double m_paramHighX2;
-  Double m_paramLowX1;
-  Double m_paramLowX2;
-public:
-  PixelBaseURQQuadraticModel () {};
-  ~PixelBaseURQQuadraticModel() {};
-
-  Void    initPixelBaseQuadraticModel       ();
-  Int     getQP                             (Int qp, Int targetBits, Int numberOfPixels, Double costPredMAD);
-  Void    updatePixelBasedURQQuadraticModel (Int qp, Int bits, Int numberOfPixels, Double costMAD);
-  Bool    checkUpdateAvailable              (Int qpReference );
-  Double  xConvertQP2QStep                  (Int qp );
-  Int     xConvertQStep2QP                  (Double qStep );
-};
-
-class TEncRateCtrl
-{
-private:
-  Bool            m_isLowdelay;
-  Int             m_prevBitrate;
-  Int             m_currBitrate;
-  Int             m_frameRate;
-  Int             m_refFrameNum;
-  Int             m_nonRefFrameNum;
-  Int             m_numOfPixels;
-  Int             m_sourceWidthInLCU;
-  Int             m_sourceHeightInLCU;      
-  Int             m_sizeGOP;
-  Int             m_indexGOP;
-  Int             m_indexFrame;
-  Int             m_indexLCU;
-  Int             m_indexUnit;
-  Int             m_indexRefFrame;
-  Int             m_indexNonRefFrame;
-  Int             m_indexPOCInGOP;
-  Int             m_indexPrevPOCInGOP;
-  Int             m_occupancyVB;
-  Int             m_initialOVB;
-  Int             m_targetBufLevel;
-  Int             m_initialTBL;
-  Int             m_remainingBitsInGOP;
-  Int             m_remainingBitsInFrame;
-  Int             m_occupancyVBInFrame;
-  Int             m_targetBits;
-  Int             m_numUnitInFrame;
-  Int             m_codedPixels;
-  Bool            m_activeUnitLevelOn;
-  Double          m_costNonRefAvgWeighting;
-  Double          m_costRefAvgWeighting;
-  Double          m_costAvgbpp;         
-  
-  FrameData*      m_pcFrameData;
-  LCUData*        m_pcLCUData;
-
-  MADLinearModel              m_cMADLinearModel;
-  PixelBaseURQQuadraticModel  m_cPixelURQQuadraticModel;
-  
-public:
-  TEncRateCtrl         () {};
-  virtual ~TEncRateCtrl() {};
-
-  Void          create                (Int sizeIntraPeriod, Int sizeGOP, Int frameRate, Int targetKbps, Int qp, Int numLCUInBasicUnit, Int sourceWidth, Int sourceHeight, Int maxCUWidth, Int maxCUHeight);
-  Void          destroy               ();
-
-  Void          initFrameData         (Int qp = 0);
-  Void          initUnitData          (Int qp = 0);
-  Int           getFrameQP            (Bool isReferenced, Int POC);
-  Bool          calculateUnitQP       ();
-  Int           getUnitQP             ()                                          { return m_pcLCUData[m_indexLCU].m_qp;  }
-  Void          updateRCGOPStatus     ();
-  Void          updataRCFrameStatus   (Int frameBits, SliceType eSliceType);
-  Void          updataRCUnitStatus    ();
-  Void          updateLCUData         (TComDataCU* pcCU, UInt64 actualLCUBits, Int qp);
-  Void          updateFrameData       (UInt64 actualFrameBits);
-  Double        xAdjustmentBits       (Int& reductionBits, Int& compensationBits);
-  Int           getGOPId              ()                                          { return m_indexFrame; }
-};
-#endif
 
 #endif
 

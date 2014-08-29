@@ -1,9 +1,9 @@
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
- * granted under this license.  
+ * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,8 @@
     \brief    class for handling bitstream (header)
 */
 
-#ifndef __COMBITSTREAM__
-#define __COMBITSTREAM__
+#ifndef __TCOMBITSTREAM__
+#define __TCOMBITSTREAM__
 
 #if _MSC_VER > 1000
 #pragma once
@@ -105,7 +105,7 @@ public:
   Void        writeAlignZero  ();
 
   /** this function should never be called */
-  void resetBits() { assert(0); }
+  Void resetBits() { assert(0); }
 
   // utility functions
 
@@ -138,7 +138,7 @@ public:
    */
   UInt getNumberOfWrittenBits() const { return UInt(m_fifo->size()) * 8 + m_num_held_bits; }
 
-  void insertAt(const TComOutputBitstream& src, UInt pos);
+  Void insertAt(const TComOutputBitstream& src, UInt pos);
 
   /**
    * Return a reference to the internal fifo
@@ -153,6 +153,9 @@ public:
 
   Void          addSubstream    ( TComOutputBitstream* pcSubstream );
   Void writeByteAlignment();
+
+  //! returns the number of start code emulations contained in the current buffer
+  Int countStartCodeEmulations();
 };
 
 /**
@@ -162,6 +165,7 @@ public:
 class TComInputBitstream
 {
   std::vector<uint8_t> *m_fifo; /// FIFO for storage of complete bytes
+  std::vector<UInt> m_emulationPreventionByteLocation;
 
 protected:
   UInt m_fifo_idx; /// Read index into m_fifo
@@ -188,7 +192,13 @@ public:
     ruiBits = (*m_fifo)[m_fifo_idx++];
   }
 
-  Void        readOutTrailingBits ();
+  Void        peekPreviousByte( UInt &byte )
+  {
+    assert(m_fifo_idx > 0);
+    byte = (*m_fifo)[m_fifo_idx - 1];
+  }
+
+  UInt        readOutTrailingBits (); // NOTE: RExt - now returns the number of bits read.
   UChar getHeldBits  ()          { return m_held_bits;          }
   TComOutputBitstream& operator= (const TComOutputBitstream& src);
   UInt  getByteLocation              ( )                     { return m_fifo_idx                    ; }
@@ -204,7 +214,14 @@ public:
   TComInputBitstream *extractSubstream( UInt uiNumBits ); // Read the nominated number of bits, and return as a bitstream.
   Void                deleteFifo(); // Delete internal fifo of bitstream.
   UInt  getNumBitsRead() { return m_numBitsRead; }
-  Void readByteAlignment();
+  UInt readByteAlignment(); // NOTE: RExt - now returns the number of bits read.
+
+  Void      pushEmulationPreventionByteLocation ( UInt pos )                  { m_emulationPreventionByteLocation.push_back( pos ); }
+  UInt      numEmulationPreventionBytesRead     ()                            { return (UInt) m_emulationPreventionByteLocation.size();    }
+  std::vector<UInt>  getEmulationPreventionByteLocation  ()                   { return m_emulationPreventionByteLocation;           }
+  UInt      getEmulationPreventionByteLocation  ( UInt idx )                  { return m_emulationPreventionByteLocation[ idx ];    }
+  Void      clearEmulationPreventionByteLocation()                            { m_emulationPreventionByteLocation.clear();          }
+  Void      setEmulationPreventionByteLocation  ( std::vector<UInt> vec )     { m_emulationPreventionByteLocation = vec;            }
 };
 
 //! \}
