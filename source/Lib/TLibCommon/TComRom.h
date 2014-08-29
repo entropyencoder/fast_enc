@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,17 +46,31 @@
 //! \ingroup TLibCommon
 //! \{
 
-///// yschoi-added macros start
-#if EN_GET_RDOQ_STATS  
+#if 1 // yschoi added
+
+#if GET_SAO_TIME
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <time.h>
+#endif
+
+extern  int GetTimeStampNs(long long *ts);
+
+extern long long g_sao_elapsed_time[10];
+extern long long g_sao_time_stamp[10];
 
 #endif
-///// yschoi-added macros end
+
+#endif
+
 
 // ====================================================================================================================
 // Macros
 // ====================================================================================================================
 
-#define     MAX_CU_DEPTH            7                           // log2(LCUSize)
+#define     MAX_CU_DEPTH            6                           // log2(LCUSize)
 #define     MAX_CU_SIZE             (1<<(MAX_CU_DEPTH))         // maximum allowable size of CU
 #define     MIN_PU_SIZE             4
 #define     MAX_NUM_SPU_W           (MAX_CU_SIZE/MIN_PU_SIZE)   // maximum number of SPU in horizontal line
@@ -67,7 +81,7 @@
 
 Void         initROM();
 Void         destroyROM();
-Void         initSigLastScan(UInt* pBuffD, UInt* pBuffH, UInt* pBuffV, Int iWidth, Int iHeight, Int iDepth);
+Void         initSigLastScan(UInt* pBuffD, UInt* pBuffH, UInt* pBuffV, Int iWidth, Int iHeight);
 // ====================================================================================================================
 // Data structure related table & variable
 // ====================================================================================================================
@@ -75,16 +89,9 @@ Void         initSigLastScan(UInt* pBuffD, UInt* pBuffH, UInt* pBuffV, Int iWidt
 // flexible conversion from relative to absolute index
 extern       UInt   g_auiZscanToRaster[ MAX_NUM_SPU_W*MAX_NUM_SPU_W ];
 extern       UInt   g_auiRasterToZscan[ MAX_NUM_SPU_W*MAX_NUM_SPU_W ];
-#if !LINEBUF_CLEANUP
-extern       UInt   g_motionRefer[ MAX_NUM_SPU_W*MAX_NUM_SPU_W ];
-#endif
 
 Void         initZscanToRaster ( Int iMaxDepth, Int iDepth, UInt uiStartVal, UInt*& rpuiCurrIdx );
 Void         initRasterToZscan ( UInt uiMaxCUWidth, UInt uiMaxCUHeight, UInt uiMaxDepth         );
-
-#if !LINEBUF_CLEANUP
-Void          initMotionReferIdx ( UInt uiMaxCUWidth, UInt uiMaxCUHeight, UInt uiMaxDepth );
-#endif
 
 // conversion of partition index to picture pel position
 extern       UInt   g_auiRasterToPelX[ MAX_NUM_SPU_W*MAX_NUM_SPU_W ];
@@ -132,9 +139,6 @@ extern       UInt*  g_auiSigLastScan[ 3 ][ MAX_CU_DEPTH ];  // raster index from
 
 extern const UInt   g_uiGroupIdx[ 32 ];
 extern const UInt   g_uiMinInGroup[ 10 ];
-
-extern const UInt   g_auiGoRiceRange[5];                  //!< maximum value coded with Rice codes
-extern const UInt   g_auiGoRicePrefixLen[5];              //!< prefix length for each maximum value
   
 extern const UInt   g_sigLastScan8x8[ 3 ][ 4 ];           //!< coefficient group scan order for 8x8 TUs
 extern       UInt   g_sigLastScanCG32x32[ 64 ];
@@ -143,15 +147,7 @@ extern       UInt   g_sigLastScanCG32x32[ 64 ];
 // ADI table
 // ====================================================================================================================
 
-extern const UChar  g_aucIntraModeNumFast[7];
-
-// ====================================================================================================================
-// Angular Intra table
-// ====================================================================================================================
-
-extern const UChar g_aucIntraModeNumAng[7];
-extern const UChar g_aucIntraModeBitsAng[7];
-extern const UChar g_aucAngIntraModeOrder[NUM_INTRA_MODE];
+extern const UChar  g_aucIntraModeNumFast[ MAX_CU_DEPTH ];
 
 // ====================================================================================================================
 // Bit-depth
@@ -282,15 +278,9 @@ static const Char MatrixType_DC[4][12][22] =
   "INTER32X32_LUMA_DC",
   },
 };
-#if !FLAT_4x4_DSL
-extern Int g_quantIntraDefault4x4[16];
-#endif
 extern Int g_quantIntraDefault8x8[64];
 extern Int g_quantIntraDefault16x16[256];
 extern Int g_quantIntraDefault32x32[1024];
-#if !FLAT_4x4_DSL
-extern Int g_quantInterDefault4x4[16];
-#endif
 extern Int g_quantInterDefault8x8[64];
 extern Int g_quantInterDefault16x16[256];
 extern Int g_quantInterDefault32x32[1024];

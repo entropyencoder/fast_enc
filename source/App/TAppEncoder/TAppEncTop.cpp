@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,6 +70,10 @@ Void TAppEncTop::xInitLibCfg()
   TComVPS vps;
   
   vps.setMaxTLayers                       ( m_maxTempLayer );
+  if (m_maxTempLayer == 1)
+  {
+    vps.setTemporalNestingFlag(true);
+  }
   vps.setMaxLayers                        ( 1 );
   for(Int i = 0; i < MAX_TLAYER; i++)
   {
@@ -80,13 +84,17 @@ Void TAppEncTop::xInitLibCfg()
 
   m_cTEncTop.setProfile(m_profile);
   m_cTEncTop.setLevel(m_levelTier, m_level);
-
+  m_cTEncTop.setProgressiveSourceFlag(m_progressiveSourceFlag);
+  m_cTEncTop.setInterlacedSourceFlag(m_interlacedSourceFlag);
+  m_cTEncTop.setNonPackedConstraintFlag(m_nonPackedConstraintFlag);
+  m_cTEncTop.setFrameOnlyConstraintFlag(m_frameOnlyConstraintFlag);
+  
   m_cTEncTop.setFrameRate                    ( m_iFrameRate );
   m_cTEncTop.setFrameSkip                    ( m_FrameSkip );
   m_cTEncTop.setSourceWidth                  ( m_iSourceWidth );
   m_cTEncTop.setSourceHeight                 ( m_iSourceHeight );
-  m_cTEncTop.setPicCroppingWindow            ( m_cropLeft, m_cropRight, m_cropTop, m_cropBottom );
-  m_cTEncTop.setFrameToBeEncoded             ( m_iFrameToBeEncoded );
+  m_cTEncTop.setConformanceWindow            ( m_confLeft, m_confRight, m_confTop, m_confBottom );
+  m_cTEncTop.setFramesToBeEncoded            ( m_framesToBeEncoded );
   
   //====== Coding Structure ========
   m_cTEncTop.setIntraPeriod                  ( m_iIntraPeriod );
@@ -118,6 +126,7 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setLoopFilterBetaOffset         ( m_loopFilterBetaOffsetDiv2  );
   m_cTEncTop.setLoopFilterTcOffset           ( m_loopFilterTcOffsetDiv2    );
   m_cTEncTop.setDeblockingFilterControlPresent( m_DeblockingFilterControlPresent);
+  m_cTEncTop.setDeblockingFilterMetric       ( m_DeblockingFilterMetric );
 
   //====== Motion search ========
   m_cTEncTop.setFastSearch                   ( m_iFastSearch  );
@@ -135,28 +144,17 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setUseAdaptQpSelect             ( m_bUseAdaptQpSelect   );
 #endif
 
-  Int lowestQP;
-  lowestQP =  - 6*(g_bitDepthY - 8); // XXX: check
-
-  if ((m_iMaxDeltaQP == 0 ) && (m_iQP == lowestQP) && (m_useLossless == true))
-  {
-    m_bUseAdaptiveQP = false;
-  }
   m_cTEncTop.setUseAdaptiveQP                ( m_bUseAdaptiveQP  );
   m_cTEncTop.setQPAdaptationRange            ( m_iQPAdaptationRange );
   
   //====== Tool list ========
-  m_cTEncTop.setUseSBACRD                    ( m_bUseSBACRD   );
   m_cTEncTop.setDeltaQpRD                    ( m_uiDeltaQpRD  );
   m_cTEncTop.setUseASR                       ( m_bUseASR      );
   m_cTEncTop.setUseHADME                     ( m_bUseHADME    );
-  m_cTEncTop.setUseLossless                  ( m_useLossless );
-  m_cTEncTop.setUseLComb                     ( m_bUseLComb    );
   m_cTEncTop.setdQPs                         ( m_aidQP        );
   m_cTEncTop.setUseRDOQ                      ( m_useRDOQ     );
-#if RDOQ_TRANSFORMSKIP
   m_cTEncTop.setUseRDOQTS                    ( m_useRDOQTS   );
-#endif
+  m_cTEncTop.setRDpenalty                 ( m_rdPenalty );
   m_cTEncTop.setQuadtreeTULog2MaxSize        ( m_uiQuadtreeTULog2MaxSize );
   m_cTEncTop.setQuadtreeTULog2MinSize        ( m_uiQuadtreeTULog2MinSize );
   m_cTEncTop.setQuadtreeTUMaxDepthInter      ( m_uiQuadtreeTUMaxDepthInter );
@@ -177,36 +175,33 @@ Void TAppEncTop::xInitLibCfg()
   
 
   //====== Weighted Prediction ========
-  m_cTEncTop.setUseWP                   ( m_bUseWeightPred      );
+  m_cTEncTop.setUseWP                   ( m_useWeightedPred      );
   m_cTEncTop.setWPBiPred                ( m_useWeightedBiPred   );
   //====== Parallel Merge Estimation ========
   m_cTEncTop.setLog2ParallelMergeLevelMinus2 ( m_log2ParallelMergeLevel - 2 );
 
   //====== Slice ========
-  m_cTEncTop.setSliceMode               ( m_iSliceMode                );
-  m_cTEncTop.setSliceArgument           ( m_iSliceArgument            );
+  m_cTEncTop.setSliceMode               ( m_sliceMode                );
+  m_cTEncTop.setSliceArgument           ( m_sliceArgument            );
 
   //====== Dependent Slice ========
-  m_cTEncTop.setDependentSliceMode        ( m_iDependentSliceMode         );
-  m_cTEncTop.setDependentSliceArgument    ( m_iDependentSliceArgument     );
-#if DEPENDENT_SLICES && !REMOVE_ENTROPY_SLICES
-  m_cTEncTop.setEntropySliceEnabledFlag   ( m_entropySliceEnabledFlag );
-#endif
+  m_cTEncTop.setSliceSegmentMode        ( m_sliceSegmentMode         );
+  m_cTEncTop.setSliceSegmentArgument    ( m_sliceSegmentArgument     );
   Int iNumPartInCU = 1<<(m_uiMaxCUDepth<<1);
-  if(m_iDependentSliceMode==SHARP_FIXED_NUMBER_OF_LCU_IN_DEPENDENT_SLICE)
+  if(m_sliceSegmentMode==FIXED_NUMBER_OF_LCU)
   {
-    m_cTEncTop.setDependentSliceArgument ( m_iDependentSliceArgument * iNumPartInCU );
+    m_cTEncTop.setSliceSegmentArgument ( m_sliceSegmentArgument * iNumPartInCU );
   }
-  if(m_iSliceMode==AD_HOC_SLICES_FIXED_NUMBER_OF_LCU_IN_SLICE)
+  if(m_sliceMode==FIXED_NUMBER_OF_LCU)
   {
-    m_cTEncTop.setSliceArgument ( m_iSliceArgument * iNumPartInCU );
+    m_cTEncTop.setSliceArgument ( m_sliceArgument * iNumPartInCU );
   }
-  if(m_iSliceMode==AD_HOC_SLICES_FIXED_NUMBER_OF_TILES_IN_SLICE)
+  if(m_sliceMode==FIXED_NUMBER_OF_TILES)
   {
-    m_cTEncTop.setSliceArgument ( m_iSliceArgument );
+    m_cTEncTop.setSliceArgument ( m_sliceArgument );
   }
   
-  if(m_iSliceMode == 0 )
+  if(m_sliceMode == 0 )
   {
     m_bLFCrossSliceBoundaryFlag = true;
   }
@@ -215,32 +210,56 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setMaxNumOffsetsPerPic (m_maxNumOffsetsPerPic);
 
   m_cTEncTop.setSaoLcuBoundary (m_saoLcuBoundary);
-  m_cTEncTop.setSaoLcuBasedOptimization (m_saoLcuBasedOptimization);
   m_cTEncTop.setPCMInputBitDepthFlag  ( m_bPCMInputBitDepthFlag); 
   m_cTEncTop.setPCMFilterDisableFlag  ( m_bPCMFilterDisableFlag); 
 
-  m_cTEncTop.setDecodedPictureHashSEIEnabled(m_decodePictureHashSEIEnabled);
+  m_cTEncTop.setDecodedPictureHashSEIEnabled(m_decodedPictureHashSEIEnabled);
   m_cTEncTop.setRecoveryPointSEIEnabled( m_recoveryPointSEIEnabled );
   m_cTEncTop.setBufferingPeriodSEIEnabled( m_bufferingPeriodSEIEnabled );
   m_cTEncTop.setPictureTimingSEIEnabled( m_pictureTimingSEIEnabled );
-#if SEI_DISPLAY_ORIENTATION
+  m_cTEncTop.setToneMappingInfoSEIEnabled                 ( m_toneMappingInfoSEIEnabled );
+  m_cTEncTop.setTMISEIToneMapId                           ( m_toneMapId );
+  m_cTEncTop.setTMISEIToneMapCancelFlag                   ( m_toneMapCancelFlag );
+  m_cTEncTop.setTMISEIToneMapPersistenceFlag              ( m_toneMapPersistenceFlag );
+  m_cTEncTop.setTMISEICodedDataBitDepth                   ( m_toneMapCodedDataBitDepth );
+  m_cTEncTop.setTMISEITargetBitDepth                      ( m_toneMapTargetBitDepth );
+  m_cTEncTop.setTMISEIModelID                             ( m_toneMapModelId );
+  m_cTEncTop.setTMISEIMinValue                            ( m_toneMapMinValue );
+  m_cTEncTop.setTMISEIMaxValue                            ( m_toneMapMaxValue );
+  m_cTEncTop.setTMISEISigmoidMidpoint                     ( m_sigmoidMidpoint );
+  m_cTEncTop.setTMISEISigmoidWidth                        ( m_sigmoidWidth );
+  m_cTEncTop.setTMISEIStartOfCodedInterva                 ( m_startOfCodedInterval );
+  m_cTEncTop.setTMISEINumPivots                           ( m_numPivots );
+  m_cTEncTop.setTMISEICodedPivotValue                     ( m_codedPivotValue );
+  m_cTEncTop.setTMISEITargetPivotValue                    ( m_targetPivotValue );
+  m_cTEncTop.setTMISEICameraIsoSpeedIdc                   ( m_cameraIsoSpeedIdc );
+  m_cTEncTop.setTMISEICameraIsoSpeedValue                 ( m_cameraIsoSpeedValue );
+  m_cTEncTop.setTMISEIExposureCompensationValueSignFlag   ( m_exposureCompensationValueSignFlag );
+  m_cTEncTop.setTMISEIExposureCompensationValueNumerator  ( m_exposureCompensationValueNumerator );
+  m_cTEncTop.setTMISEIExposureCompensationValueDenomIdc   ( m_exposureCompensationValueDenomIdc );
+  m_cTEncTop.setTMISEIRefScreenLuminanceWhite             ( m_refScreenLuminanceWhite );
+  m_cTEncTop.setTMISEIExtendedRangeWhiteLevel             ( m_extendedRangeWhiteLevel );
+  m_cTEncTop.setTMISEINominalBlackLevelLumaCodeValue      ( m_nominalBlackLevelLumaCodeValue );
+  m_cTEncTop.setTMISEINominalWhiteLevelLumaCodeValue      ( m_nominalWhiteLevelLumaCodeValue );
+  m_cTEncTop.setTMISEIExtendedWhiteLevelLumaCodeValue     ( m_extendedWhiteLevelLumaCodeValue );
+  m_cTEncTop.setFramePackingArrangementSEIEnabled( m_framePackingSEIEnabled );
+  m_cTEncTop.setFramePackingArrangementSEIType( m_framePackingSEIType );
+  m_cTEncTop.setFramePackingArrangementSEIId( m_framePackingSEIId );
+  m_cTEncTop.setFramePackingArrangementSEIQuincunx( m_framePackingSEIQuincunx );
+  m_cTEncTop.setFramePackingArrangementSEIInterpretation( m_framePackingSEIInterpretation );
   m_cTEncTop.setDisplayOrientationSEIAngle( m_displayOrientationSEIAngle );
-#endif
-#if SEI_TEMPORAL_LEVEL0_INDEX
   m_cTEncTop.setTemporalLevel0IndexSEIEnabled( m_temporalLevel0IndexSEIEnabled );
-#endif
+  m_cTEncTop.setGradualDecodingRefreshInfoEnabled( m_gradualDecodingRefreshInfoEnabled );
+  m_cTEncTop.setDecodingUnitInfoSEIEnabled( m_decodingUnitInfoSEIEnabled );
+  m_cTEncTop.setSOPDescriptionSEIEnabled( m_SOPDescriptionSEIEnabled );
+  m_cTEncTop.setScalableNestingSEIEnabled( m_scalableNestingSEIEnabled );
   m_cTEncTop.setUniformSpacingIdr          ( m_iUniformSpacingIdr );
   m_cTEncTop.setNumColumnsMinus1           ( m_iNumColumnsMinus1 );
   m_cTEncTop.setNumRowsMinus1              ( m_iNumRowsMinus1 );
   if(m_iUniformSpacingIdr==0)
   {
-#if MIN_SPATIAL_SEGMENTATION
     m_cTEncTop.setColumnWidth              ( m_pColumnWidth );
     m_cTEncTop.setRowHeight                ( m_pRowHeight );
-#else
-    m_cTEncTop.setColumnWidth              ( m_pchColumnWidth );
-    m_cTEncTop.setRowHeight                ( m_pchRowHeight );
-#endif
   }
   m_cTEncTop.xCheckGSParameters();
   Int uiTilesCount          = (m_iNumRowsMinus1+1) * (m_iNumColumnsMinus1+1);
@@ -255,7 +274,6 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setUseScalingListId           ( m_useScalingListId  );
   m_cTEncTop.setScalingListFile            ( m_scalingListFile   );
   m_cTEncTop.setSignHideFlag(m_signHideFlag);
-#if RATE_CONTROL_LAMBDA_DOMAIN
   m_cTEncTop.setUseRateCtrl         ( m_RCEnableRateControl );
   m_cTEncTop.setTargetBitrate       ( m_RCTargetBitrate );
   m_cTEncTop.setKeepHierBit         ( m_RCKeepHierarchicalBit );
@@ -263,17 +281,10 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setUseLCUSeparateModel ( m_RCUseLCUSeparateModel );
   m_cTEncTop.setInitialQP           ( m_RCInitialQP );
   m_cTEncTop.setForceIntraQP        ( m_RCForceIntraQP );
-#else
-  m_cTEncTop.setUseRateCtrl     ( m_enableRateCtrl);
-  m_cTEncTop.setTargetBitrate   ( m_targetBitrate);
-  m_cTEncTop.setNumLCUInUnit    ( m_numLCUInUnit);
-#endif
   m_cTEncTop.setTransquantBypassEnableFlag(m_TransquantBypassEnableFlag);
-  m_cTEncTop.setCUTransquantBypassFlagValue(m_CUTransquantBypassFlagValue);
+  m_cTEncTop.setCUTransquantBypassFlagForceValue(m_CUTransquantBypassFlagForce);
   m_cTEncTop.setUseRecalculateQPAccordingToLambda( m_recalculateQPAccordingToLambda );
-#if STRONG_INTRA_SMOOTHING
   m_cTEncTop.setUseStrongIntraSmoothing( m_useStrongIntraSmoothing );
-#endif
   m_cTEncTop.setActiveParameterSetsSEIEnabled ( m_activeParameterSetsSEIEnabled ); 
   m_cTEncTop.setVuiParametersPresentFlag( m_vuiParametersPresentFlag );
   m_cTEncTop.setAspectRatioIdc( m_aspectRatioIdc );
@@ -292,42 +303,18 @@ Void TAppEncTop::xInitLibCfg()
   m_cTEncTop.setChromaSampleLocTypeTopField( m_chromaSampleLocTypeTopField );
   m_cTEncTop.setChromaSampleLocTypeBottomField( m_chromaSampleLocTypeBottomField );
   m_cTEncTop.setNeutralChromaIndicationFlag( m_neutralChromaIndicationFlag );
+  m_cTEncTop.setDefaultDisplayWindow( m_defDispWinLeftOffset, m_defDispWinRightOffset, m_defDispWinTopOffset, m_defDispWinBottomOffset );
+  m_cTEncTop.setFrameFieldInfoPresentFlag( m_frameFieldInfoPresentFlag );
+  m_cTEncTop.setPocProportionalToTimingFlag( m_pocProportionalToTimingFlag );
+  m_cTEncTop.setNumTicksPocDiffOneMinus1   ( m_numTicksPocDiffOneMinus1    );
   m_cTEncTop.setBitstreamRestrictionFlag( m_bitstreamRestrictionFlag );
   m_cTEncTop.setTilesFixedStructureFlag( m_tilesFixedStructureFlag );
   m_cTEncTop.setMotionVectorsOverPicBoundariesFlag( m_motionVectorsOverPicBoundariesFlag );
-#if MIN_SPATIAL_SEGMENTATION
   m_cTEncTop.setMinSpatialSegmentationIdc( m_minSpatialSegmentationIdc );
-#endif
   m_cTEncTop.setMaxBytesPerPicDenom( m_maxBytesPerPicDenom );
   m_cTEncTop.setMaxBitsPerMinCuDenom( m_maxBitsPerMinCuDenom );
   m_cTEncTop.setLog2MaxMvLengthHorizontal( m_log2MaxMvLengthHorizontal );
   m_cTEncTop.setLog2MaxMvLengthVertical( m_log2MaxMvLengthVertical );
-#if SIGNAL_BITRATE_PICRATE_IN_VPS
-  TComBitRatePicRateInfo *bitRatePicRateInfo = m_cTEncTop.getVPS()->getBitratePicrateInfo();
-  // The number of bit rate/pic rate have to equal to number of sub-layers.
-  if(m_bitRatePicRateMaxTLayers)
-  {
-    assert(m_bitRatePicRateMaxTLayers == m_cTEncTop.getVPS()->getMaxTLayers());
-  }
-  for(Int i = 0; i < m_bitRatePicRateMaxTLayers; i++)
-  {
-    bitRatePicRateInfo->setBitRateInfoPresentFlag( i, m_bitRateInfoPresentFlag[i] );
-    if( bitRatePicRateInfo->getBitRateInfoPresentFlag(i) )
-    {
-      bitRatePicRateInfo->setAvgBitRate(i, m_avgBitRate[i]);
-      bitRatePicRateInfo->setMaxBitRate(i, m_maxBitRate[i]);
-    }
-  }
-  for(Int i = 0; i < m_bitRatePicRateMaxTLayers; i++)
-  {
-    bitRatePicRateInfo->setPicRateInfoPresentFlag( i, m_picRateInfoPresentFlag[i] );
-    if( bitRatePicRateInfo->getPicRateInfoPresentFlag(i) )
-    {
-      bitRatePicRateInfo->setAvgPicRate     (i, m_avgPicRate[i]);
-      bitRatePicRateInfo->setConstantPicRateIdc(i, m_constantPicRateIdc[i]);
-    }
-  }
-#endif
 }
 
 Void TAppEncTop::xCreateLib()
@@ -353,9 +340,9 @@ Void TAppEncTop::xDestroyLib()
   m_cTEncTop.destroy();
 }
 
-Void TAppEncTop::xInitLib()
+Void TAppEncTop::xInitLib(Bool isFieldCoding)
 {
-  m_cTEncTop.init();
+  m_cTEncTop.init(isFieldCoding);
 }
 
 // ====================================================================================================================
@@ -385,7 +372,7 @@ Void TAppEncTop::encode()
   // initialize internal class & member variables
   xInitLibCfg();
   xCreateLib();
-  xInitLib();
+  xInitLib(m_isField);
   
   // main encoder loop
   Int   iNumEncoded = 0;
@@ -394,9 +381,22 @@ Void TAppEncTop::encode()
   list<AccessUnit> outputAccessUnits; ///< list of access units to write out.  is populated by the encoding process
 
   // allocate original YUV buffer
-  pcPicYuvOrg->create( m_iSourceWidth, m_iSourceHeight, m_uiMaxCUWidth, m_uiMaxCUHeight, m_uiMaxCUDepth );
+  if( m_isField )
+  {
+    pcPicYuvOrg->create( m_iSourceWidth, m_iSourceHeightOrg, m_uiMaxCUWidth, m_uiMaxCUHeight, m_uiMaxCUDepth );
+  }
+  else
+  {
+    pcPicYuvOrg->create( m_iSourceWidth, m_iSourceHeight, m_uiMaxCUWidth, m_uiMaxCUHeight, m_uiMaxCUDepth );
+  }
   
-  while ( !bEos )
+#if GET_SAO_TIME
+  for (int i = 0; i < 10; i++)
+  {
+    g_sao_elapsed_time[i] = 0; // init
+  }
+#endif
+  while (!bEos)
   {
     // get buffers
     xGetBuffer(pcPicYuvRec);
@@ -407,8 +407,7 @@ Void TAppEncTop::encode()
     // increase number of received frames
     m_iFrameRcvd++;
     
-    bEos = (m_iFrameRcvd == m_iFrameToBeEncoded);
-
+    bEos = (m_isField && (m_iFrameRcvd == (m_framesToBeEncoded >> 1) )) || ( !m_isField && (m_iFrameRcvd == m_framesToBeEncoded) );
     Bool flush = 0;
     // if end of file (which is only detected on a read failure) flush the encoder of any queued pictures
     if (m_cTVideoIOYuvInputFile.isEof())
@@ -416,11 +415,18 @@ Void TAppEncTop::encode()
       flush = true;
       bEos = true;
       m_iFrameRcvd--;
-      m_cTEncTop.setFrameToBeEncoded(m_iFrameRcvd);
+      m_cTEncTop.setFramesToBeEncoded(m_iFrameRcvd);
     }
 
     // call encoding function for one frame
-    m_cTEncTop.encode( bEos, flush ? 0 : pcPicYuvOrg, m_cListPicYuvRec, outputAccessUnits, iNumEncoded );
+    if ( m_isField )
+    {
+      m_cTEncTop.encode( bEos, flush ? 0 : pcPicYuvOrg, m_cListPicYuvRec, outputAccessUnits, iNumEncoded, m_isTopFieldFirst);
+    }
+    else
+    {
+      m_cTEncTop.encode( bEos, flush ? 0 : pcPicYuvOrg, m_cListPicYuvRec, outputAccessUnits, iNumEncoded );
+    }
     
     // write bistream to file if necessary
     if ( iNumEncoded > 0 )
@@ -430,7 +436,7 @@ Void TAppEncTop::encode()
     }
   }
 
-  m_cTEncTop.printSummary();
+  m_cTEncTop.printSummary(m_isField);
 
   // delete original YUV buffer
   pcPicYuvOrg->destroy();
@@ -498,27 +504,60 @@ Void TAppEncTop::xDeleteBuffer( )
  */
 Void TAppEncTop::xWriteOutput(std::ostream& bitstreamFile, Int iNumEncoded, const std::list<AccessUnit>& accessUnits)
 {
-  Int i;
-  
-  TComList<TComPicYuv*>::iterator iterPicYuvRec = m_cListPicYuvRec.end();
-  list<AccessUnit>::const_iterator iterBitstream = accessUnits.begin();
-  
-  for ( i = 0; i < iNumEncoded; i++ )
+  if (m_isField)
   {
-    --iterPicYuvRec;
-  }
-  
-  for ( i = 0; i < iNumEncoded; i++ )
-  {
-    TComPicYuv*  pcPicYuvRec  = *(iterPicYuvRec++);
-    if (m_pchReconFile)
+    //Reinterlace fields
+    Int i;
+    TComList<TComPicYuv*>::iterator iterPicYuvRec = m_cListPicYuvRec.end();
+    list<AccessUnit>::const_iterator iterBitstream = accessUnits.begin();
+    
+    for ( i = 0; i < iNumEncoded; i++ )
     {
-      m_cTVideoIOYuvReconFile.write( pcPicYuvRec, m_cropLeft, m_cropRight, m_cropTop, m_cropBottom );
+      --iterPicYuvRec;
     }
-
-    const AccessUnit& au = *(iterBitstream++);
-    const vector<UInt>& stats = writeAnnexB(bitstreamFile, au);
-    rateStatsAccum(au, stats);
+    
+    for ( i = 0; i < iNumEncoded/2; i++ )
+    {
+      TComPicYuv*  pcPicYuvRecTop  = *(iterPicYuvRec++);
+      TComPicYuv*  pcPicYuvRecBottom  = *(iterPicYuvRec++);
+      
+      if (m_pchReconFile)
+      {
+        m_cTVideoIOYuvReconFile.write( pcPicYuvRecTop, pcPicYuvRecBottom, m_confLeft, m_confRight, m_confTop, m_confBottom, m_isTopFieldFirst );
+      }
+      
+      const AccessUnit& auTop = *(iterBitstream++);
+      const vector<UInt>& statsTop = writeAnnexB(bitstreamFile, auTop);
+      rateStatsAccum(auTop, statsTop);
+      
+      const AccessUnit& auBottom = *(iterBitstream++);
+      const vector<UInt>& statsBottom = writeAnnexB(bitstreamFile, auBottom);
+      rateStatsAccum(auBottom, statsBottom);
+    }
+  }
+  else
+  {
+    Int i;
+    TComList<TComPicYuv*>::iterator iterPicYuvRec = m_cListPicYuvRec.end();
+    list<AccessUnit>::const_iterator iterBitstream = accessUnits.begin();
+    
+    for ( i = 0; i < iNumEncoded; i++ )
+    {
+      --iterPicYuvRec;
+    }
+    
+    for ( i = 0; i < iNumEncoded; i++ )
+    {
+      TComPicYuv*  pcPicYuvRec  = *(iterPicYuvRec++);
+      if (m_pchReconFile)
+      {
+        m_cTVideoIOYuvReconFile.write( pcPicYuvRec, m_confLeft, m_confRight, m_confTop, m_confBottom );
+      }
+      
+      const AccessUnit& au = *(iterBitstream++);
+      const vector<UInt>& stats = writeAnnexB(bitstreamFile, au);
+      rateStatsAccum(au, stats);
+    }
   }
 }
 
@@ -536,18 +575,20 @@ void TAppEncTop::rateStatsAccum(const AccessUnit& au, const std::vector<UInt>& a
     {
     case NAL_UNIT_CODED_SLICE_TRAIL_R:
     case NAL_UNIT_CODED_SLICE_TRAIL_N:
-    case NAL_UNIT_CODED_SLICE_TLA:
+    case NAL_UNIT_CODED_SLICE_TSA_R:
     case NAL_UNIT_CODED_SLICE_TSA_N:
     case NAL_UNIT_CODED_SLICE_STSA_R:
     case NAL_UNIT_CODED_SLICE_STSA_N:
-    case NAL_UNIT_CODED_SLICE_BLA:
-    case NAL_UNIT_CODED_SLICE_BLANT:
+    case NAL_UNIT_CODED_SLICE_BLA_W_LP:
+    case NAL_UNIT_CODED_SLICE_BLA_W_RADL:
     case NAL_UNIT_CODED_SLICE_BLA_N_LP:
-    case NAL_UNIT_CODED_SLICE_IDR:
+    case NAL_UNIT_CODED_SLICE_IDR_W_RADL:
     case NAL_UNIT_CODED_SLICE_IDR_N_LP:
     case NAL_UNIT_CODED_SLICE_CRA:
-    case NAL_UNIT_CODED_SLICE_DLP:
-    case NAL_UNIT_CODED_SLICE_TFD:
+    case NAL_UNIT_CODED_SLICE_RADL_N:
+    case NAL_UNIT_CODED_SLICE_RADL_R:
+    case NAL_UNIT_CODED_SLICE_RASL_N:
+    case NAL_UNIT_CODED_SLICE_RASL_R:
     case NAL_UNIT_VPS:
     case NAL_UNIT_SPS:
     case NAL_UNIT_PPS:

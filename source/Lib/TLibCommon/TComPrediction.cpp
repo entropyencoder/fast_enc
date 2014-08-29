@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,8 +82,8 @@ Void TComPrediction::initTempBuff()
 {
   if( m_piYuvExt == NULL )
   {
-    Int extWidth  = g_uiMaxCUWidth + 16; 
-    Int extHeight = g_uiMaxCUHeight + 1;
+    Int extWidth  = MAX_CU_SIZE + 16; 
+    Int extHeight = MAX_CU_SIZE + 1;
     Int i, j;
     for (i = 0; i < 4; i++)
     {
@@ -93,20 +93,20 @@ Void TComPrediction::initTempBuff()
         m_filteredBlock[i][j].create(extWidth, extHeight);
       }
     }
-    m_iYuvExtHeight  = ((g_uiMaxCUHeight + 2) << 4);
-    m_iYuvExtStride = ((g_uiMaxCUWidth  + 8) << 4);
+    m_iYuvExtHeight  = ((MAX_CU_SIZE + 2) << 4);
+    m_iYuvExtStride = ((MAX_CU_SIZE  + 8) << 4);
     m_piYuvExt = new Int[ m_iYuvExtStride * m_iYuvExtHeight ];
 
     // new structure
-    m_acYuvPred[0] .create( g_uiMaxCUWidth, g_uiMaxCUHeight );
-    m_acYuvPred[1] .create( g_uiMaxCUWidth, g_uiMaxCUHeight );
+    m_acYuvPred[0] .create( MAX_CU_SIZE, MAX_CU_SIZE );
+    m_acYuvPred[1] .create( MAX_CU_SIZE, MAX_CU_SIZE );
 
-    m_cYuvPredTemp.create( g_uiMaxCUWidth, g_uiMaxCUHeight );
+    m_cYuvPredTemp.create( MAX_CU_SIZE, MAX_CU_SIZE );
   }
 
-  if (m_iLumaRecStride != (g_uiMaxCUWidth>>1) + 1)
+  if (m_iLumaRecStride != (MAX_CU_SIZE>>1) + 1)
   {
-    m_iLumaRecStride =  (g_uiMaxCUWidth>>1) + 1;
+    m_iLumaRecStride =  (MAX_CU_SIZE>>1) + 1;
     if (!m_pLumaRecBuffer)
     {
       m_pLumaRecBuffer = new Pel[ m_iLumaRecStride * m_iLumaRecStride ];
@@ -121,6 +121,7 @@ Void TComPrediction::initTempBuff()
 // Function for calculating DC value of the reference samples used in Intra prediction
 Pel TComPrediction::predIntraGetPredValDC( Int* pSrc, Int iSrcStride, UInt iWidth, UInt iHeight, Bool bAbove, Bool bLeft )
 {
+  assert(iWidth > 0 && iHeight > 0);
   Int iInd, iSum = 0;
   Pel pDcVal;
 
@@ -328,7 +329,7 @@ Void TComPrediction::xPredIntraAng(Int bitDepth, Int* pSrc, Int srcStride, Pel*&
   }
 }
 
-Void TComPrediction::predIntraLumaAng(TComPattern* pcTComPattern, UInt uiDirMode, Pel* piPred, UInt uiStride, Int iWidth, Int iHeight,  TComDataCU* pcCU, Bool bAbove, Bool bLeft )
+Void TComPrediction::predIntraLumaAng(TComPattern* pcTComPattern, UInt uiDirMode, Pel* piPred, UInt uiStride, Int iWidth, Int iHeight, Bool bAbove, Bool bLeft )
 {
   Pel *pDst = piPred;
   Int *ptrSrc;
@@ -349,28 +350,24 @@ Void TComPrediction::predIntraLumaAng(TComPattern* pcTComPattern, UInt uiDirMode
   }
   else
   {
-#if RESTRICT_INTRA_BOUNDARY_SMOOTHING
     if ( (iWidth > 16) || (iHeight > 16) )
     {
       xPredIntraAng(g_bitDepthY, ptrSrc+sw+1, sw, pDst, uiStride, iWidth, iHeight, uiDirMode, bAbove, bLeft, false );
     }
     else
     {
-#endif
       xPredIntraAng(g_bitDepthY, ptrSrc+sw+1, sw, pDst, uiStride, iWidth, iHeight, uiDirMode, bAbove, bLeft, true );
 
       if( (uiDirMode == DC_IDX ) && bAbove && bLeft )
       {
         xDCPredFiltering( ptrSrc+sw+1, sw, pDst, uiStride, iWidth, iHeight);
       }
-#if RESTRICT_INTRA_BOUNDARY_SMOOTHING
     }
-#endif
   }
 }
 
 // Angular chroma
-Void TComPrediction::predIntraChromaAng( TComPattern* pcTComPattern, Int* piSrc, UInt uiDirMode, Pel* piPred, UInt uiStride, Int iWidth, Int iHeight, TComDataCU* pcCU, Bool bAbove, Bool bLeft )
+Void TComPrediction::predIntraChromaAng( Int* piSrc, UInt uiDirMode, Pel* piPred, UInt uiStride, Int iWidth, Int iHeight, Bool bAbove, Bool bLeft )
 {
   Pel *pDst = piPred;
   Int *ptrSrc = piSrc;
@@ -424,26 +421,26 @@ Void TComPrediction::motionCompensation ( TComDataCU* pcCU, TComYuv* pcYuvPred, 
     {
       if( pcCU->getSlice()->getPPS()->getUseWP())
       {
-        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred, iPartIdx, true );
+        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred, true );
       }
       else
       {
-        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred, iPartIdx );
+        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred );
       }
       if ( pcCU->getSlice()->getPPS()->getUseWP() )
       {
-        xWeightedPredictionUni( pcCU, pcYuvPred, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred, iPartIdx );
+        xWeightedPredictionUni( pcCU, pcYuvPred, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred );
       }
     }
     else
     {
       if ( xCheckIdenticalMotion( pcCU, uiPartAddr ) )
       {
-        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, REF_PIC_LIST_0, pcYuvPred, iPartIdx );
+        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, REF_PIC_LIST_0, pcYuvPred );
       }
       else
       {
-        xPredInterBi  (pcCU, uiPartAddr, iWidth, iHeight, pcYuvPred, iPartIdx );
+        xPredInterBi  (pcCU, uiPartAddr, iWidth, iHeight, pcYuvPred );
       }
     }
     return;
@@ -457,33 +454,33 @@ Void TComPrediction::motionCompensation ( TComDataCU* pcCU, TComYuv* pcYuvPred, 
     {
       if( pcCU->getSlice()->getPPS()->getUseWP())
       {
-        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred, iPartIdx, true );
+        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred, true );
       }
       else
       {
-        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred, iPartIdx );
+        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred );
       }
       if ( pcCU->getSlice()->getPPS()->getUseWP() )
       {
-        xWeightedPredictionUni( pcCU, pcYuvPred, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred, iPartIdx );
+        xWeightedPredictionUni( pcCU, pcYuvPred, uiPartAddr, iWidth, iHeight, eRefPicList, pcYuvPred );
       }
     }
     else
     {
       if ( xCheckIdenticalMotion( pcCU, uiPartAddr ) )
       {
-        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, REF_PIC_LIST_0, pcYuvPred, iPartIdx );
+        xPredInterUni (pcCU, uiPartAddr, iWidth, iHeight, REF_PIC_LIST_0, pcYuvPred );
       }
       else
       {
-        xPredInterBi  (pcCU, uiPartAddr, iWidth, iHeight, pcYuvPred, iPartIdx );
+        xPredInterBi  (pcCU, uiPartAddr, iWidth, iHeight, pcYuvPred );
       }
     }
   }
   return;
 }
 
-Void TComPrediction::xPredInterUni ( TComDataCU* pcCU, UInt uiPartAddr, Int iWidth, Int iHeight, RefPicList eRefPicList, TComYuv*& rpcYuvPred, Int iPartIdx, Bool bi )
+Void TComPrediction::xPredInterUni ( TComDataCU* pcCU, UInt uiPartAddr, Int iWidth, Int iHeight, RefPicList eRefPicList, TComYuv*& rpcYuvPred, Bool bi )
 {
   Int         iRefIdx     = pcCU->getCUMvField( eRefPicList )->getRefIdx( uiPartAddr );           assert (iRefIdx >= 0);
   TComMv      cMv         = pcCU->getCUMvField( eRefPicList )->getMv( uiPartAddr );
@@ -492,7 +489,7 @@ Void TComPrediction::xPredInterUni ( TComDataCU* pcCU, UInt uiPartAddr, Int iWid
   xPredInterChromaBlk( pcCU, pcCU->getSlice()->getRefPic( eRefPicList, iRefIdx )->getPicYuvRec(), uiPartAddr, &cMv, iWidth, iHeight, rpcYuvPred, bi );
 }
 
-Void TComPrediction::xPredInterBi ( TComDataCU* pcCU, UInt uiPartAddr, Int iWidth, Int iHeight, TComYuv*& rpcYuvPred, Int iPartIdx )
+Void TComPrediction::xPredInterBi ( TComDataCU* pcCU, UInt uiPartAddr, Int iWidth, Int iHeight, TComYuv*& rpcYuvPred )
 {
   TComYuv* pcMbYuv;
   Int      iRefIdx[2] = {-1, -1};
@@ -512,18 +509,18 @@ Void TComPrediction::xPredInterBi ( TComDataCU* pcCU, UInt uiPartAddr, Int iWidt
     pcMbYuv = &m_acYuvPred[iRefList];
     if( pcCU->getCUMvField( REF_PIC_LIST_0 )->getRefIdx( uiPartAddr ) >= 0 && pcCU->getCUMvField( REF_PIC_LIST_1 )->getRefIdx( uiPartAddr ) >= 0 )
     {
-      xPredInterUni ( pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcMbYuv, iPartIdx, true );
+      xPredInterUni ( pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcMbYuv, true );
     }
     else
     {
       if ( ( pcCU->getSlice()->getPPS()->getUseWP()       && pcCU->getSlice()->getSliceType() == P_SLICE ) || 
            ( pcCU->getSlice()->getPPS()->getWPBiPred() && pcCU->getSlice()->getSliceType() == B_SLICE ) )
       {
-        xPredInterUni ( pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcMbYuv, iPartIdx, true );
+        xPredInterUni ( pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcMbYuv, true );
       }
       else
       {
-        xPredInterUni ( pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcMbYuv, iPartIdx );
+        xPredInterUni ( pcCU, uiPartAddr, iWidth, iHeight, eRefPicList, pcMbYuv );
       }
     }
   }
@@ -534,11 +531,11 @@ Void TComPrediction::xPredInterBi ( TComDataCU* pcCU, UInt uiPartAddr, Int iWidt
   }  
   else if ( pcCU->getSlice()->getPPS()->getUseWP() && pcCU->getSlice()->getSliceType() == P_SLICE )
   {
-    xWeightedPredictionUni( pcCU, &m_acYuvPred[0], uiPartAddr, iWidth, iHeight, REF_PIC_LIST_0, rpcYuvPred, iPartIdx ); 
+    xWeightedPredictionUni( pcCU, &m_acYuvPred[0], uiPartAddr, iWidth, iHeight, REF_PIC_LIST_0, rpcYuvPred ); 
   }
   else
   {
-    xWeightedAverage( pcCU, &m_acYuvPred[0], &m_acYuvPred[1], iRefIdx[0], iRefIdx[1], uiPartAddr, iWidth, iHeight, rpcYuvPred );
+    xWeightedAverage( &m_acYuvPred[0], &m_acYuvPred[1], iRefIdx[0], iRefIdx[1], uiPartAddr, iWidth, iHeight, rpcYuvPred );
   }
 }
 
@@ -644,7 +641,7 @@ Void TComPrediction::xPredInterChromaBlk( TComDataCU *cu, TComPicYuv *refPic, UI
   }
 }
 
-Void TComPrediction::xWeightedAverage( TComDataCU* pcCU, TComYuv* pcYuvSrc0, TComYuv* pcYuvSrc1, Int iRefIdx0, Int iRefIdx1, UInt uiPartIdx, Int iWidth, Int iHeight, TComYuv*& rpcYuvDst )
+Void TComPrediction::xWeightedAverage( TComYuv* pcYuvSrc0, TComYuv* pcYuvSrc1, Int iRefIdx0, Int iRefIdx1, UInt uiPartIdx, Int iWidth, Int iHeight, TComYuv*& rpcYuvDst )
 {
   if( iRefIdx0 >= 0 && iRefIdx1 >= 0 )
   {
@@ -661,7 +658,7 @@ Void TComPrediction::xWeightedAverage( TComDataCU* pcCU, TComYuv* pcYuvSrc0, TCo
 }
 
 // AMVP
-Void TComPrediction::getMvPredAMVP( TComDataCU* pcCU, UInt uiPartIdx, UInt uiPartAddr, RefPicList eRefPicList, Int iRefIdx, TComMv& rcMvPred )
+Void TComPrediction::getMvPredAMVP( TComDataCU* pcCU, UInt uiPartIdx, UInt uiPartAddr, RefPicList eRefPicList, TComMv& rcMvPred )
 {
   AMVPInfo* pcAMVPInfo = pcCU->getCUMvField(eRefPicList)->getAMVPInfo();
   if( pcAMVPInfo->iN <= 1 )
@@ -694,7 +691,7 @@ Void TComPrediction::xPredIntraPlanar( Int* pSrc, Int srcStride, Pel* rpDst, Int
 
   Int k, l, bottomLeft, topRight;
   Int horPred;
-  Int leftColumn[MAX_CU_SIZE], topRow[MAX_CU_SIZE], bottomRow[MAX_CU_SIZE], rightColumn[MAX_CU_SIZE];
+  Int leftColumn[MAX_CU_SIZE+1], topRow[MAX_CU_SIZE+1], bottomRow[MAX_CU_SIZE], rightColumn[MAX_CU_SIZE];
   UInt blkSize = width;
   UInt offset2D = width;
   UInt shift1D = g_aucConvertToBit[ width ] + 2;
