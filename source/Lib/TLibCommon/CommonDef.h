@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,7 +55,7 @@
 // Version information
 // ====================================================================================================================
 
-#define NV_VERSION        "9.1"                 ///< Current software version
+#define NV_VERSION        "13.0"                 ///< Current software version
 
 // ====================================================================================================================
 // Platform information
@@ -109,7 +109,6 @@
 
 #define MAX_NUM_REF_PICS            16          ///< max. number of pictures used for reference
 #define MAX_NUM_REF                 16          ///< max. number of entries in picture reference list
-#define MAX_NUM_REF_LC              MAX_NUM_REF_PICS  // TODO: remove this macro definition (leftover from combined list concept)
 
 #define MAX_UINT                    0xFFFFFFFFU ///< max. value of unsigned 32-bit integer
 #define MAX_INT                     2147483647  ///< max. value of signed 32-bit integer
@@ -192,106 +191,62 @@ template <typename T> inline T Clip3( T minVal, T maxVal, T a) { return std::min
 //       effort can be done without use of macros to alter the names used to indicate the different NAL unit types.
 enum NalUnitType
 {
-#if HM9_NALU_TYPES
-  NAL_UNIT_CODED_SLICE_TRAIL_N = 0,   // 0
-  NAL_UNIT_CODED_SLICE_TRAIL_R,   // 1
+  NAL_UNIT_CODED_SLICE_TRAIL_N = 0, // 0
+  NAL_UNIT_CODED_SLICE_TRAIL_R,     // 1
   
-  NAL_UNIT_CODED_SLICE_TSA_N,     // 2
-  NAL_UNIT_CODED_SLICE_TLA,       // 3   // Current name in the spec: TSA_R
+  NAL_UNIT_CODED_SLICE_TSA_N,       // 2
+  NAL_UNIT_CODED_SLICE_TSA_R,       // 3
   
-  NAL_UNIT_CODED_SLICE_STSA_N,    // 4
-  NAL_UNIT_CODED_SLICE_STSA_R,    // 5
+  NAL_UNIT_CODED_SLICE_STSA_N,      // 4
+  NAL_UNIT_CODED_SLICE_STSA_R,      // 5
 
-  NAL_UNIT_CODED_SLICE_RADL_N,    // 6
-  NAL_UNIT_CODED_SLICE_DLP,       // 7 // Current name in the spec: RADL_R
+  NAL_UNIT_CODED_SLICE_RADL_N,      // 6
+  NAL_UNIT_CODED_SLICE_RADL_R,      // 7
   
-  NAL_UNIT_CODED_SLICE_RASL_N,    // 8
-  NAL_UNIT_CODED_SLICE_TFD,       // 9 // Current name in the spec: RASL_R
+  NAL_UNIT_CODED_SLICE_RASL_N,      // 8
+  NAL_UNIT_CODED_SLICE_RASL_R,      // 9
 
-  NAL_UNIT_RESERVED_10,
-  NAL_UNIT_RESERVED_11,
-  NAL_UNIT_RESERVED_12,
-  NAL_UNIT_RESERVED_13,
-  NAL_UNIT_RESERVED_14,
-  NAL_UNIT_RESERVED_15,
+  NAL_UNIT_RESERVED_VCL_N10,
+  NAL_UNIT_RESERVED_VCL_R11,
+  NAL_UNIT_RESERVED_VCL_N12,
+  NAL_UNIT_RESERVED_VCL_R13,
+  NAL_UNIT_RESERVED_VCL_N14,
+  NAL_UNIT_RESERVED_VCL_R15,
 
-  NAL_UNIT_CODED_SLICE_BLA,       // 16   // Current name in the spec: BLA_W_LP
-  NAL_UNIT_CODED_SLICE_BLANT,     // 17   // Current name in the spec: BLA_W_DLP
-  NAL_UNIT_CODED_SLICE_BLA_N_LP,  // 18
-  NAL_UNIT_CODED_SLICE_IDR,       // 19  // Current name in the spec: IDR_W_DLP
-  NAL_UNIT_CODED_SLICE_IDR_N_LP,  // 20
-  NAL_UNIT_CODED_SLICE_CRA,       // 21
-  NAL_UNIT_RESERVED_22,
-  NAL_UNIT_RESERVED_23,
+  NAL_UNIT_CODED_SLICE_BLA_W_LP,    // 16
+  NAL_UNIT_CODED_SLICE_BLA_W_RADL,  // 17
+  NAL_UNIT_CODED_SLICE_BLA_N_LP,    // 18
+  NAL_UNIT_CODED_SLICE_IDR_W_RADL,  // 19
+  NAL_UNIT_CODED_SLICE_IDR_N_LP,    // 20
+  NAL_UNIT_CODED_SLICE_CRA,         // 21
+  NAL_UNIT_RESERVED_IRAP_VCL22,
+  NAL_UNIT_RESERVED_IRAP_VCL23,
 
-  NAL_UNIT_RESERVED_24,
-  NAL_UNIT_RESERVED_25,
-  NAL_UNIT_RESERVED_26,
-  NAL_UNIT_RESERVED_27,
-  NAL_UNIT_RESERVED_28,
-  NAL_UNIT_RESERVED_29,
-  NAL_UNIT_RESERVED_30,
-  NAL_UNIT_RESERVED_31,
+  NAL_UNIT_RESERVED_VCL24,
+  NAL_UNIT_RESERVED_VCL25,
+  NAL_UNIT_RESERVED_VCL26,
+  NAL_UNIT_RESERVED_VCL27,
+  NAL_UNIT_RESERVED_VCL28,
+  NAL_UNIT_RESERVED_VCL29,
+  NAL_UNIT_RESERVED_VCL30,
+  NAL_UNIT_RESERVED_VCL31,
 
-  NAL_UNIT_VPS,                   // 32
-  NAL_UNIT_SPS,                   // 33
-  NAL_UNIT_PPS,                   // 34
-  NAL_UNIT_ACCESS_UNIT_DELIMITER, // 35
-  NAL_UNIT_EOS,                   // 36
-  NAL_UNIT_EOB,                   // 37
-  NAL_UNIT_FILLER_DATA,           // 38
-  NAL_UNIT_SEI,                   // 39 Prefix SEI
-  NAL_UNIT_SEI_SUFFIX,            // 40 Suffix SEI
-#else
-  NAL_UNIT_UNSPECIFIED_0 = 0,
-  NAL_UNIT_CODED_SLICE_TRAIL_R,   // 1
-  NAL_UNIT_CODED_SLICE_TRAIL_N,   // 2
-  NAL_UNIT_CODED_SLICE_TLA,       // 3   // Current name in the spec: TSA_R
-  NAL_UNIT_CODED_SLICE_TSA_N,     // 4
-  NAL_UNIT_CODED_SLICE_STSA_R,    // 5
-  NAL_UNIT_CODED_SLICE_STSA_N,    // 6
-  NAL_UNIT_CODED_SLICE_BLA,       // 7   // Current name in the spec: BLA_W_TFD
-  NAL_UNIT_CODED_SLICE_BLANT,     // 8   // Current name in the spec: BLA_W_DLP
-  NAL_UNIT_CODED_SLICE_BLA_N_LP,  // 9
-  NAL_UNIT_CODED_SLICE_IDR,       // 10  // Current name in the spec: IDR_W_LP
-  NAL_UNIT_CODED_SLICE_IDR_N_LP,  // 11
-  NAL_UNIT_CODED_SLICE_CRA,       // 12
-  NAL_UNIT_CODED_SLICE_DLP,       // 13
-  NAL_UNIT_CODED_SLICE_TFD,       // 14
-  NAL_UNIT_RESERVED_15,
-  NAL_UNIT_RESERVED_16,
-  NAL_UNIT_RESERVED_17,
-  NAL_UNIT_RESERVED_18,
-  NAL_UNIT_RESERVED_19,
-  NAL_UNIT_RESERVED_20,
-  NAL_UNIT_RESERVED_21,
-  NAL_UNIT_RESERVED_22,
-  NAL_UNIT_RESERVED_23,
-  NAL_UNIT_RESERVED_24,
-  NAL_UNIT_VPS,                   // 25
-  NAL_UNIT_SPS,                   // 26
-  NAL_UNIT_PPS,                   // 27
-  NAL_UNIT_ACCESS_UNIT_DELIMITER, // 28
-  NAL_UNIT_EOS,                   // 29
-  NAL_UNIT_EOB,                   // 30
-  NAL_UNIT_FILLER_DATA,           // 31
-  NAL_UNIT_SEI,                   // 32
-  NAL_UNIT_RESERVED_33,
-  NAL_UNIT_RESERVED_34,
-  NAL_UNIT_RESERVED_35,
-  NAL_UNIT_RESERVED_36,
-  NAL_UNIT_RESERVED_37,
-  NAL_UNIT_RESERVED_38,
-  NAL_UNIT_RESERVED_39,
-  NAL_UNIT_RESERVED_40,
-#endif
-  NAL_UNIT_RESERVED_41,
-  NAL_UNIT_RESERVED_42,
-  NAL_UNIT_RESERVED_43,
-  NAL_UNIT_RESERVED_44,
-  NAL_UNIT_RESERVED_45,
-  NAL_UNIT_RESERVED_46,
-  NAL_UNIT_RESERVED_47,
+  NAL_UNIT_VPS,                     // 32
+  NAL_UNIT_SPS,                     // 33
+  NAL_UNIT_PPS,                     // 34
+  NAL_UNIT_ACCESS_UNIT_DELIMITER,   // 35
+  NAL_UNIT_EOS,                     // 36
+  NAL_UNIT_EOB,                     // 37
+  NAL_UNIT_FILLER_DATA,             // 38
+  NAL_UNIT_PREFIX_SEI,              // 39
+  NAL_UNIT_SUFFIX_SEI,              // 40
+  NAL_UNIT_RESERVED_NVCL41,
+  NAL_UNIT_RESERVED_NVCL42,
+  NAL_UNIT_RESERVED_NVCL43,
+  NAL_UNIT_RESERVED_NVCL44,
+  NAL_UNIT_RESERVED_NVCL45,
+  NAL_UNIT_RESERVED_NVCL46,
+  NAL_UNIT_RESERVED_NVCL47,
   NAL_UNIT_UNSPECIFIED_48,
   NAL_UNIT_UNSPECIFIED_49,
   NAL_UNIT_UNSPECIFIED_50,

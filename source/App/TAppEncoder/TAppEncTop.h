@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.  
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,7 +72,7 @@ protected:
   // initialization
   Void  xCreateLib        ();                               ///< create files & encoder class
   Void  xInitLibCfg       ();                               ///< initialize internal variables
-  Void  xInitLib          ();                               ///< initialize encoder class
+  Void  xInitLib          (Bool isFieldCoding);             ///< initialize encoder class
   Void  xDestroyLib       ();                               ///< destroy encoder class
   
   /// obtain required buffers

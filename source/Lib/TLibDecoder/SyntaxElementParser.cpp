@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.  
 *
-* Copyright (c) 2010-2012, ITU/ISO/IEC
+* Copyright (c) 2010-2014, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -51,11 +51,11 @@ Void  SyntaxElementParser::xReadCodeTr           (UInt length, UInt& rValue, con
   fprintf( g_hTrace, "%8lld  ", g_nSymbolCounter++ );
   if (length < 10)
   {
-    fprintf( g_hTrace, "%-50s u(%d)  : %d\n", pSymbolName, length, rValue ); 
+    fprintf( g_hTrace, "%-50s u(%d)  : %u\n", pSymbolName, length, rValue ); 
   }
   else
   {
-    fprintf( g_hTrace, "%-50s u(%d) : %d\n", pSymbolName, length, rValue ); 
+    fprintf( g_hTrace, "%-50s u(%d) : %u\n", pSymbolName, length, rValue ); 
   }
   fflush ( g_hTrace );
 }
@@ -64,7 +64,7 @@ Void  SyntaxElementParser::xReadUvlcTr           (UInt& rValue, const Char *pSym
 {
   xReadUvlc (rValue);
   fprintf( g_hTrace, "%8lld  ", g_nSymbolCounter++ );
-  fprintf( g_hTrace, "%-50s ue(v) : %d\n", pSymbolName, rValue ); 
+  fprintf( g_hTrace, "%-50s ue(v) : %u\n", pSymbolName, rValue ); 
   fflush ( g_hTrace );
 }
 
