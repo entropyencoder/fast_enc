@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,9 @@
 
 #pragma once
 
+#ifndef __NALREAD__
+#define __NALREAD__
+
 #include "TLibCommon/TypeDef.h"
 #include "TLibCommon/TComBitStream.h"
 #include "TLibCommon/NAL.h"
@@ -57,6 +60,8 @@ struct InputNALUnit : public NALUnit
   TComInputBitstream* m_Bitstream;
 };
 
-void read(InputNALUnit& nalu, std::vector<uint8_t>& nalUnitBuf);
+Void read(InputNALUnit& nalu, std::vector<uint8_t>& nalUnitBuf);
 
 //! \}
+
+#endif

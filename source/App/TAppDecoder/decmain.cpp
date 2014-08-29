@@ -1,9 +1,9 @@
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
- * granted under this license.  
+ * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
 //! \ingroup TAppDecoder
 //! \{
 
-bool g_md5_mismatch = false; ///< top level flag that indicates if there has been a decoding mismatch
+Bool g_md5_mismatch = false; ///< top level flag that indicates if there has been a decoding mismatch
 
 // ====================================================================================================================
 // Main function
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 
   // print information
   fprintf( stdout, "\n" );
-  fprintf( stdout, "HM software: Decoder Version [%s]", NV_VERSION );
+  fprintf( stdout, "HM software: Decoder Version [%s] (including RExt)", NV_VERSION );
   fprintf( stdout, NVM_ONOS );
   fprintf( stdout, NVM_COMPILEDBY );
   fprintf( stdout, NVM_BITS );
@@ -72,8 +72,8 @@ int main(int argc, char* argv[])
   }
 
   // starting time
-  double dResult;
-  long lBefore = clock();
+  Double dResult;
+  clock_t lBefore = clock();
 
   // call decoding function
   cTAppDecTop.decode();
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
   }
 
   // ending time
-  dResult = (double)(clock()-lBefore) / CLOCKS_PER_SEC;
+  dResult = (Double)(clock()-lBefore) / CLOCKS_PER_SEC;
   printf("\n Total Time: %12.3f sec.\n", dResult);
 
   // destroy application decoder class
