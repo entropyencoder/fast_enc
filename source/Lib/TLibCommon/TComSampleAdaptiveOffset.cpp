@@ -604,10 +604,21 @@ Void TComSampleAdaptiveOffset::offsetCTU(Int ctu, TComPicYuv* srcYuv, TComPicYuv
   //block boundary availability
   pPic->getPicSym()->deriveLoopFilterBoundaryAvailibility(ctu, isLeftAvail,isRightAvail,isAboveAvail,isBelowAvail,isAboveLeftAvail,isAboveRightAvail,isBelowLeftAvail,isBelowRightAvail);
 
-  Int yPos   = (ctu / m_numCTUInWidth)*m_maxCUHeight;
+#if TEST_UNALIGNED_SAO
+  Int yPos = (ctu / m_numCTUInWidth)*m_maxCUHeight - SAO_CTU_SHIFT_VER;
+  yPos = (yPos < 0) ? 0 : yPos;
+  Int xPos = (ctu % m_numCTUInWidth)*m_maxCUWidth - SAO_CTU_SHIFT_HOR;
+  xPos = (xPos < 0) ? 0 : xPos;
+  Int height = (yPos + m_maxCUHeight + SAO_CTU_SHIFT_VER > m_picHeight) ? (m_picHeight - yPos) : m_maxCUHeight;
+  height = (yPos == 0) ? (height - SAO_CTU_SHIFT_VER) : height;
+  Int width = (xPos + m_maxCUWidth + SAO_CTU_SHIFT_HOR > m_picWidth) ? (m_picWidth - xPos) : m_maxCUWidth;
+  width = (xPos == 0) ? (width - SAO_CTU_SHIFT_HOR) : width;
+#else
+  Int yPos = (ctu / m_numCTUInWidth)*m_maxCUHeight;
   Int xPos   = (ctu % m_numCTUInWidth)*m_maxCUWidth;
   Int height = (yPos + m_maxCUHeight > m_picHeight)?(m_picHeight- yPos):m_maxCUHeight;
   Int width  = (xPos + m_maxCUWidth  > m_picWidth )?(m_picWidth - xPos):m_maxCUWidth;
+#endif
 
   for(Int compIdx= 0; compIdx < NUM_SAO_COMPONENTS; compIdx++)
   {
