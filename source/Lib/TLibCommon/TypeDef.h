@@ -43,6 +43,16 @@
 //! \ingroup TLibCommon
 //! \{
 
+#if 1     // added by yschoi
+
+#define TEST_UNALIGNED_SAO  1   // test a new SAO filtering to apply the parameters to post-deblocking recon. unaligned to CTU boundary
+#if TEST_UNALIGNED_SAO
+#define SAO_CTU_SHIFT_HOR   4
+#define SAO_CTU_SHIFT_VER   4
+#endif
+
+#endif    // added by yschoi
+
 // ====================================================================================================================
 // Debugging
 // ====================================================================================================================
