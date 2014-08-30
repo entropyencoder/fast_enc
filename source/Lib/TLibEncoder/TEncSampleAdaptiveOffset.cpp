@@ -134,11 +134,19 @@ Void TEncSampleAdaptiveOffset::createEncData()
 
   for(Int typeIdc=0; typeIdc < NUM_SAO_NEW_TYPES; typeIdc++)
   {
-    m_skipLinesR[COMPONENT_Y ][typeIdc]= 5;
+#if TEST_UNALIGNED_SAO
+    m_skipLinesR[COMPONENT_Y][typeIdc] = 0;
+    m_skipLinesR[COMPONENT_Cb][typeIdc] = m_skipLinesR[COMPONENT_Cr][typeIdc] = 0;
+
+    m_skipLinesB[COMPONENT_Y][typeIdc] = 0;
+    m_skipLinesB[COMPONENT_Cb][typeIdc] = m_skipLinesB[COMPONENT_Cr][typeIdc] = 0;
+#else
+    m_skipLinesR[COMPONENT_Y][typeIdc] = 5;
     m_skipLinesR[COMPONENT_Cb][typeIdc]= m_skipLinesR[COMPONENT_Cr][typeIdc]= 3;
 
     m_skipLinesB[COMPONENT_Y ][typeIdc]= 4;
     m_skipLinesB[COMPONENT_Cb][typeIdc]= m_skipLinesB[COMPONENT_Cr][typeIdc]= 2;
+#endif
 
 #if SAO_ENCODE_ALLOW_USE_PREDEBLOCK
     if(isPreDBFSamplesUsed)
@@ -321,21 +329,40 @@ Void TEncSampleAdaptiveOffset::getStatistics(SAOStatData*** blkStats, TComPicYuv
 
   for(Int ctu= 0; ctu < m_numCTUsPic; ctu++)
   {
+#if TEST_UNALIGNED_SAO
+    Int yPos   = (ctu / m_numCTUInWidth)*m_maxCUHeight - SAO_CTU_SHIFT_VER;
+    yPos = (yPos < 0) ? 0 : yPos;
+    Int xPos   = (ctu % m_numCTUInWidth)*m_maxCUWidth  - SAO_CTU_SHIFT_HOR;
+    xPos = (xPos < 0) ? 0 : xPos;
+    Int height = (yPos + m_maxCUHeight + SAO_CTU_SHIFT_VER > m_picHeight) ? (m_picHeight - yPos) : m_maxCUHeight;
+    height = (yPos == 0) ? (height - SAO_CTU_SHIFT_VER) : height;
+    Int width  = (xPos + m_maxCUWidth + SAO_CTU_SHIFT_HOR > m_picWidth) ? (m_picWidth - xPos) : m_maxCUWidth;
+    width  = (xPos == 0) ? (width - SAO_CTU_SHIFT_HOR) : width;
+#else
     Int yPos   = (ctu / m_numCTUInWidth)*m_maxCUHeight;
     Int xPos   = (ctu % m_numCTUInWidth)*m_maxCUWidth;
     Int height = (yPos + m_maxCUHeight > m_picHeight)?(m_picHeight- yPos):m_maxCUHeight;
     Int width  = (xPos + m_maxCUWidth  > m_picWidth )?(m_picWidth - xPos):m_maxCUWidth;
+#endif
 
     pPic->getPicSym()->deriveLoopFilterBoundaryAvailibility(ctu, isLeftAvail,isRightAvail,isAboveAvail,isBelowAvail,isAboveLeftAvail,isAboveRightAvail,isBelowLeftAvail,isBelowRightAvail);
 
     //NOTE: The number of skipped lines during gathering CTU statistics depends on the slice boundary availabilities.
     //For simplicity, here only picture boundaries are considered.
 
-    isRightAvail      = (xPos + m_maxCUWidth  < m_picWidth );
+#if TEST_UNALIGNED_SAO
+    isRightAvail = (xPos + m_maxCUWidth + SAO_CTU_SHIFT_HOR < m_picWidth);
+    isBelowAvail = (yPos + m_maxCUHeight + SAO_CTU_SHIFT_VER < m_picHeight);
+    isBelowRightAvail = (isRightAvail && isBelowAvail);
+    isBelowLeftAvail = ((xPos > 0) && (isBelowAvail));
+    isAboveRightAvail = ((yPos > 0) && (isRightAvail));
+#else
+    isRightAvail = (xPos + m_maxCUWidth  < m_picWidth);
     isBelowAvail      = (yPos + m_maxCUHeight < m_picHeight);
     isBelowRightAvail = (isRightAvail && isBelowAvail);
     isBelowLeftAvail  = ((xPos > 0) && (isBelowAvail));
     isAboveRightAvail = ((yPos > 0) && (isRightAvail));
+#endif
 
     for(Int compIdx = 0; compIdx < numberOfComponents; compIdx++)
     {
