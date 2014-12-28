@@ -50,6 +50,12 @@
 //! \ingroup TLibCommon
 //! \{
 
+///// yschoi-added macros start
+#if EN_GET_RDOQ_STATS  
+
+#endif
+///// yschoi-added macros end
+
 class ScanGenerator
 {
 private:

@@ -1401,6 +1401,119 @@ Void TComTrQuant::transformNxN(       TComTU        & rTu,
       printBlock(m_plTempCoeff, uiWidth, uiHeight, uiWidth);
 #endif
 
+#if CLR_COEF
+      //// Test 1 : clear the coefficients with horizontal and vertical frequencies of (N / CLR_COEF_LEVEL) or higher
+      //for(int i=uiHeight/CLR_COEF_LEVEL; i<uiHeight; i++)
+      //{
+      //  for(int j=uiWidth/CLR_COEF_LEVEL; j<uiWidth; j++)
+      //  {
+      //    m_plTempCoeff[i*uiHeight + j] = 0;
+      //  }
+      //}
+
+      //// Test 2 : clear the coefficients with horizontal or vertical frequencies of (N / CLR_COEF_LEVEL) or higher
+      //for(int i=0; i<uiHeight; i++)
+      //{
+      //  for(int j=uiWidth/CLR_COEF_LEVEL; j<uiWidth; j++)
+      //  {
+      //    m_plTempCoeff[i*uiHeight + j] = 0;
+      //  }
+      //}
+      //for(int i=uiHeight/CLR_COEF_LEVEL; i<uiHeight; i++)
+      //{
+      //  for(int j=0; j<uiWidth; j++)
+      //  {
+      //    m_plTempCoeff[i*uiHeight + j] = 0;
+      //  }
+      //}
+
+      // Test 3 : start clearing the subset (4x4) coefficients in reverse diagonal order from the last subset
+      int clr_pos_x, clr_pos_y;
+      int num_of_total_subsets = (uiHeight / 4) * (uiWidth / 4);
+      int num_of_cleared_subsets = CLR_COEF_LEVEL * (uiWidth / 8) * (uiHeight / 8); // 0 <= CLR_COEF_LEVEL <= 3
+
+      if (uiWidth >= 8 && uiHeight >= 8)
+      {
+        for (int k = num_of_total_subsets - 1; k >= num_of_total_subsets - num_of_cleared_subsets; k--)
+        {
+          if (uiWidth == 8 && uiHeight == 8)
+          {
+            clr_pos_x = (k == 3 || k == 2) ? 4 : 0;
+            clr_pos_y = (k == 3 || k == 1) ? 4 : 0;
+
+            for (int i = 0; i<4; i++)
+            {
+              for (int j = 0; j<4; j++)
+              {
+                m_plTempCoeff[(clr_pos_y + i)*uiHeight + clr_pos_x + j] = 0;
+              }
+            }
+          }
+          else if (uiWidth == 16 && uiHeight == 16)
+          {
+            switch (k)
+            {
+            case  0:  clr_pos_x = 0; clr_pos_y = 0; break;
+            case  1:  clr_pos_x = 0; clr_pos_y = 4; break;
+            case  2:  clr_pos_x = 4; clr_pos_y = 0; break;
+            case  3:  clr_pos_x = 0; clr_pos_y = 8; break;
+            case  4:  clr_pos_x = 4; clr_pos_y = 4; break;
+            case  5:  clr_pos_x = 8; clr_pos_y = 0; break;
+            case  6:  clr_pos_x = 0; clr_pos_y = 12; break;
+            case  7:  clr_pos_x = 4; clr_pos_y = 8; break;
+            case  8:  clr_pos_x = 8; clr_pos_y = 4; break;
+            case  9:  clr_pos_x = 12; clr_pos_y = 0; break;
+            case 10:  clr_pos_x = 4; clr_pos_y = 12; break;
+            case 11:  clr_pos_x = 8; clr_pos_y = 8; break;
+            case 12:  clr_pos_x = 12; clr_pos_y = 4; break;
+            case 13:  clr_pos_x = 8; clr_pos_y = 12; break;
+            case 14:  clr_pos_x = 4; clr_pos_y = 8; break;
+            default:  clr_pos_x = 12; clr_pos_y = 12; break;
+            }
+
+            for (int i = 0; i<4; i++)
+            {
+              for (int j = 0; j<4; j++)
+              {
+                m_plTempCoeff[(clr_pos_y + i)*uiHeight + clr_pos_x + j] = 0;
+              }
+            }
+          }
+          else // uiWidth==32 && uiHeight==32, 8x8 larger virtual subset is used for simplicity
+          {
+            switch (k >> 2)
+            {
+            case  0:  clr_pos_x = 0 * 2; clr_pos_y = 0 * 2; break;
+            case  1:  clr_pos_x = 0 * 2; clr_pos_y = 4 * 2; break;
+            case  2:  clr_pos_x = 4 * 2; clr_pos_y = 0 * 2; break;
+            case  3:  clr_pos_x = 0 * 2; clr_pos_y = 8 * 2; break;
+            case  4:  clr_pos_x = 4 * 2; clr_pos_y = 4 * 2; break;
+            case  5:  clr_pos_x = 8 * 2; clr_pos_y = 0 * 2; break;
+            case  6:  clr_pos_x = 0 * 2; clr_pos_y = 12 * 2; break;
+            case  7:  clr_pos_x = 4 * 2; clr_pos_y = 8 * 2; break;
+            case  8:  clr_pos_x = 8 * 2; clr_pos_y = 4 * 2; break;
+            case  9:  clr_pos_x = 12 * 2; clr_pos_y = 0 * 2; break;
+            case 10:  clr_pos_x = 4 * 2; clr_pos_y = 12 * 2; break;
+            case 11:  clr_pos_x = 8 * 2; clr_pos_y = 8 * 2; break;
+            case 12:  clr_pos_x = 12 * 2; clr_pos_y = 4 * 2; break;
+            case 13:  clr_pos_x = 8 * 2; clr_pos_y = 12 * 2; break;
+            case 14:  clr_pos_x = 4 * 2; clr_pos_y = 8 * 2; break;
+            default:  clr_pos_x = 12 * 2; clr_pos_y = 12 * 2; break;
+            }
+
+            for (int i = 0; i<4 * 2; i++)
+            {
+              for (int j = 0; j<4 * 2; j++)
+              {
+                m_plTempCoeff[(clr_pos_y + i)*uiHeight + clr_pos_x + j] = 0;
+              }
+            }
+          }
+        }
+      }
+
+#endif
+
       xQuant( rTu, m_plTempCoeff, rpcCoeff,
 
 #if ADAPTIVE_QP_SELECTION

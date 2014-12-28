@@ -43,6 +43,17 @@
 //! \ingroup TLibCommon
 //! \{
 
+///// yschoi-added macros start
+#define CLR_COEF            0 //1   // Enable clearing high frequency coefficients
+#define CLR_COEF_LEVEL      3 //4   // Determine the degree of coefficient clearing (Zero is NOT allowed.)
+// How it works depends on the context.
+// e.g. denominator, i.e. set (N / MIN_CLR_FREQ_DENOM) or higher freq component to zero for NxN transform 
+#define EN_GET_RDOQ_STATS   0
+#define EN_LC_RDOQ_TEST_0   0   // perform the comparison only between all zero and the first phase result without the decision of the clearing coefficient-by-coefficient in the 2nd phase of RDOQ
+#define EN_LC_RDOQ_TEST_1   0   // Skip the first phase of RDOQ with normal hard decision offset
+#define EN_LC_RDOQ_TEST_2   0   // Skip TU-level AZB comparison in the RDOQ 2nd phase
+///// yschoi-added macros end
+
 // ====================================================================================================================
 // Debugging
 // ====================================================================================================================
