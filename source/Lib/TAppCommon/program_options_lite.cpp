@@ -1,9 +1,9 @@
 /* The copyright in this software is being made available under the BSD
  * License, included below. This software may be subject to other third party
  * and contributor rights, including patent rights, and no such rights are
- * granted under this license.  
+ * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,7 @@
 #include <string>
 #include <list>
 #include <map>
+#include <algorithm>
 #include "program_options_lite.h"
 
 using namespace std;
@@ -48,7 +49,7 @@ namespace df
 {
   namespace program_options_lite
   {
-    
+
     Options::~Options()
     {
       for(Options::NamesPtrList::iterator it = opt_list.begin(); it != opt_list.end(); it++)
@@ -56,13 +57,13 @@ namespace df
         delete *it;
       }
     }
-    
+
     void Options::addOption(OptionBase *opt)
     {
       Names* names = new Names();
       names->opt = opt;
       string& opt_string = opt->opt_string;
-      
+
       size_t opt_start = 0;
       for (size_t opt_end = 0; opt_end != string::npos;)
       {
@@ -94,7 +95,7 @@ namespace df
     {
       return OptionSpecific(*this);
     }
-    
+
     static void setOptions(Options::NamesPtrList& opt_list, const string& value)
     {
       /* multiple options may be registered for the same name:
@@ -106,7 +107,7 @@ namespace df
     }
 
     static const char spaces[41] = "                                        ";
-    
+
     /* format help text for a single option:
      * using the formatting: "-x, --long",
      * if a short/long option isn't specified, it is not printed
@@ -136,7 +137,7 @@ namespace df
         out << "--" << entry.opt_long.front();
       }
     }
-    
+
     /* format the help text */
     void doHelp(ostream& out, Options& opts, unsigned columns)
     {
@@ -152,7 +153,7 @@ namespace df
 
       unsigned opt_width = min(max_width+2, 28u + pad_short) + 2;
       unsigned desc_width = columns - opt_width;
-      
+
       /* second pass: write out formatted option and help text.
        *  - align start of help text to start at opt_width
        *  - if the option text is longer than opt_width, place the help
@@ -207,7 +208,7 @@ namespace df
             /* eat up multiple space characters */
             split_pos = opt_desc.find_last_not_of(' ', split_pos) + 1;
           }
-          
+
           /* bad split if no suitable space to split at.  fall back to width */
           bool bad_split = split_pos == string::npos || split_pos <= cur_pos;
           if (bad_split)
@@ -215,14 +216,14 @@ namespace df
             split_pos = cur_pos + desc_width;
           }
           line << opt_desc.substr(cur_pos, split_pos - cur_pos);
-          
+
           /* eat up any space for the start of the next line */
           if (!bad_split)
           {
             split_pos = opt_desc.find_first_not_of(' ', split_pos);
           }
           cur_pos = newline_pos = split_pos;
-          
+
           if (cur_pos >= opt_desc.size())
           {
             break;
@@ -233,7 +234,7 @@ namespace df
         cout << line.str() << endl;
       }
     }
-    
+
     bool storePair(Options& opts, bool allow_long, bool allow_short, const string& name, const string& value)
     {
       bool found = false;
@@ -246,7 +247,7 @@ namespace df
           found = true;
         }
       }
-      
+
       /* check for the short list */
       if (allow_short && !(found && allow_long))
       {
@@ -267,12 +268,12 @@ namespace df
       setOptions((*opt_it).second, value);
       return true;
     }
-    
+
     bool storePair(Options& opts, const string& name, const string& value)
     {
       return storePair(opts, true, true, name, value);
     }
-    
+
     /**
      * returns number of extra arguments consumed
      */
@@ -286,7 +287,7 @@ namespace df
       size_t arg_opt_start = arg.find_first_not_of('-');
       size_t arg_opt_sep = arg.find_first_of('=');
       string option = arg.substr(arg_opt_start, arg_opt_sep - arg_opt_start);
-      
+
       unsigned extra_argc_consumed = 0;
       if (arg_opt_sep == string::npos)
       {
@@ -337,7 +338,7 @@ namespace df
 
       return 1;
     }
-    
+
     list<const char*>
     scanArgv(Options& opts, unsigned argc, const char* argv[])
     {
@@ -384,7 +385,7 @@ namespace df
 
       return non_option_arguments;
     }
-    
+
     void scanLine(Options& opts, string& line)
     {
       /* strip any leading whitespace */
@@ -491,7 +492,7 @@ namespace df
       scanFile(opts, cfgstream);
     }
 
-  };
-};
+  }
+}
 
 //! \}

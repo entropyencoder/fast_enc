@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2012, ITU/ISO/IEC
+ * Copyright (c) 2010-2014, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,9 @@
 
 #pragma once
 
+#ifndef __SEIWRITE__
+#define __SEIWRITE__
+
 #include "SyntaxElementWriter.h"
 #include "TLibCommon/SEI.h"
 
@@ -46,24 +49,36 @@ public:
   SEIWriter() {};
   virtual ~SEIWriter() {};
 
-  void writeSEImessage(TComBitIf& bs, const SEI& sei);
+  Void writeSEImessage(TComBitIf& bs, const SEI& sei, TComSPS *sps);
 
 protected:
-  Void xWriteSEIpayloadData(const SEI& sei);
+  Void xWriteSEIpayloadData(TComBitIf& bs, const SEI& sei, TComSPS *sps);
   Void xWriteSEIuserDataUnregistered(const SEIuserDataUnregistered &sei);
   Void xWriteSEIActiveParameterSets(const SEIActiveParameterSets& sei);
+  Void xWriteSEIDecodingUnitInfo(const SEIDecodingUnitInfo& sei, TComSPS *sps);
   Void xWriteSEIDecodedPictureHash(const SEIDecodedPictureHash& sei);
-  Void xWriteSEIBufferingPeriod(const SEIBufferingPeriod& sei);
-  Void xWriteSEIPictureTiming(const SEIPictureTiming& sei);
+  Void xWriteSEIBufferingPeriod(const SEIBufferingPeriod& sei, TComSPS *sps);
+  Void xWriteSEIPictureTiming(const SEIPictureTiming& sei, TComSPS *sps);
   TComSPS *m_pSPS;
   Void xWriteSEIRecoveryPoint(const SEIRecoveryPoint& sei);
-#if SEI_DISPLAY_ORIENTATION
+  Void xWriteSEIFramePacking(const SEIFramePacking& sei);
+  Void xWriteSEISegmentedRectFramePacking(const SEISegmentedRectFramePacking& sei);
   Void xWriteSEIDisplayOrientation(const SEIDisplayOrientation &sei);
-#endif
-#if SEI_TEMPORAL_LEVEL0_INDEX
   Void xWriteSEITemporalLevel0Index(const SEITemporalLevel0Index &sei);
-#endif
+  Void xWriteSEIGradualDecodingRefreshInfo(const SEIGradualDecodingRefreshInfo &sei);
+  Void xWriteSEINoDisplay(const SEINoDisplay &sei);
+  Void xWriteSEIToneMappingInfo(const SEIToneMappingInfo& sei);
+  Void xWriteSEISOPDescription(const SEISOPDescription& sei);
+  Void xWriteSEIScalableNesting(TComBitIf& bs, const SEIScalableNesting& sei, TComSPS *sps);
+  Void xWriteSEITempMotionConstrainedTileSets(TComBitIf& bs, const SEITempMotionConstrainedTileSets& sei);
+  Void xWriteSEITimeCode(const SEITimeCode& sei);
+  Void xWriteSEIChromaSamplingFilterHint(const SEIChromaSamplingFilterHint& sei/*, TComSPS *sps*/);
+  Void writeUserDefinedCoefficients(const SEIChromaSamplingFilterHint& sei);
+  Void xWriteSEIKneeFunctionInfo(const SEIKneeFunctionInfo &sei);
+  Void xWriteSEIMasteringDisplayColourVolume( const SEIMasteringDisplayColourVolume& sei);
   Void xWriteByteAlign();
 };
 
 //! \}
+
+#endif
