@@ -3,7 +3,7 @@
 * and contributor rights, including patent rights, and no such rights are
 * granted under this license.
 *
-* Copyright (c) 2010-2015, ITU/ISO/IEC
+* Copyright (c) 2010-2016, ITU/ISO/IEC
 * All rights reserved.
 *
 * Redistribution and use in source and binary forms, with or without
@@ -883,7 +883,6 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
               READ_FLAG( uiCode, "intra_block_copy_enabled_flag" );           screenExtension.setUseIntraBlockCopy( uiCode != 0 );
               READ_FLAG( uiCode, "palette_mode_enabled_flag" );               screenExtension.setUsePLTMode( uiCode != 0 );
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
               UInt MaxDPBSize = 0;
               if (!screenExtension.getUseIntraBlockCopy())
               {
@@ -955,7 +954,6 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
                   exit(1);
                 }
               }
-#endif
 
               if ( screenExtension.getUsePLTMode() )//decode only when palette mode is enabled
               {
@@ -1170,28 +1168,19 @@ Void TDecCavlc::parseSliceHeader (TComSlice* pcSlice, ParameterSetManager *param
 
   if(!pcSlice->getDependentSliceSegmentFlag())
   {
-#if SCM_V0057_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
     Bool bTwoVersionsOfCurrDecPicFlag = ( pps->getPpsScreenExtension().getUseIntraBlockCopy() 
       &&(sps->getUseSAO() || !pps->getPicDisableDeblockingFilterFlag() || pps->getDeblockingFilterOverrideEnabledFlag())
       );
-#endif
     for (Int i = 0; i < pps->getNumExtraSliceHeaderBits(); i++)
     {
       READ_FLAG(uiCode, "slice_reserved_flag[]"); // ignored
     }
 
     READ_UVLC (    uiCode, "slice_type" );            pcSlice->setSliceType((SliceType)uiCode);
-#if SCM_V0057_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
-#if SCM_V0057_FIX
     if ( sps->getMaxDecPicBuffering( pcSlice->getTLayer() ) == 1 )
     {
       assert( bTwoVersionsOfCurrDecPicFlag == 0 );
     }
-#else
-    if (sps->getMaxDecPicBuffering(pcSlice->getTLayer()) == 1 && bTwoVersionsOfCurrDecPicFlag)
-      assert((SliceType)uiCode == I_SLICE);
-#endif
-#endif
 
     if( pps->getOutputFlagPresentFlag() )
     {
@@ -1234,11 +1223,9 @@ Void TDecCavlc::parseSliceHeader (TComSlice* pcSlice, ParameterSetManager *param
       {
         iPOCmsb = iPrevPOCmsb;
       }
-#if SCM_V0057_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
       TComReferencePictureSet* rps1 = pcSlice->getLocalRPS();
       (*rps1)=TComReferencePictureSet();
       assert(rps1->getNumberOfPictures() + bTwoVersionsOfCurrDecPicFlag <= sps->getMaxDecPicBuffering(sps->getMaxTLayers()-1)-1);
-#endif
 
       if ( pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA_W_LP
         || pcSlice->getNalUnitType() == NAL_UNIT_CODED_SLICE_BLA_W_RADL
@@ -1871,11 +1858,18 @@ Void TDecCavlc::parseProfileTier(ProfileTierLevel *ptl, const Bool /*bIsSubLayer
   }
 
   if ((ptl->getProfileIdc() >= Profile::MAIN && ptl->getProfileIdc() <= Profile::HIGHTHROUGHPUTREXT) ||
+#if SCM_SPEC_ALIGN_OF_PROFILE_INDICATORS
+       ptl->getProfileIdc() == Profile::MAINSCC ||
+#endif 
        ptl->getProfileCompatibilityFlag(Profile::MAIN) ||
        ptl->getProfileCompatibilityFlag(Profile::MAIN10) ||
        ptl->getProfileCompatibilityFlag(Profile::MAINSTILLPICTURE) ||
        ptl->getProfileCompatibilityFlag(Profile::MAINREXT) ||
-       ptl->getProfileCompatibilityFlag(Profile::HIGHTHROUGHPUTREXT) )
+       ptl->getProfileCompatibilityFlag(Profile::HIGHTHROUGHPUTREXT)
+#if SCM_SPEC_ALIGN_OF_PROFILE_INDICATORS
+       || ptl->getProfileCompatibilityFlag(Profile::MAINSCC)
+#endif 
+       )
   {
     READ_FLAG(    uiCode, PTL_TRACE_TEXT("inbld_flag"                      )); assert(uiCode == 0);
   }

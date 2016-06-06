@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -5656,11 +5656,7 @@ Void TEncSearch::preCalcRDMerge(TComDataCU* pcCU, Pel *Palette[3], Pel* pSrc[3],
         modMode=1;
       }
 
-#if SCM_W0075_PLT_CHROMA_42X_LOSSLESS
       if( !pcCU->getCUTransquantBypass(0) || pcCU->getSlice()->getSPS()->getChromaFormatIdc() != CHROMA_444 )
-#else
-      if (!pcCU->getCUTransquantBypass(0))
-#endif
       {
         uiIdxStartMerge = currentPLTElement->position;
         predIndex = currentPLTElement->indexPred;

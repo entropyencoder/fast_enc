@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1081,33 +1081,29 @@ Void TEncCu::xCompressCU( TComDataCU*& rpcBestCU, TComDataCU*& rpcTempCU, const 
               testedModes[uiIterNumber]=xCheckPLTMode( rpcBestCU, rpcTempCU, false, uiIterNumber, pltSize);
               rpcTempCU->initEstData( uiDepth, iQP, bIsLosslessMode );
 
-#if SCM_W0075_PLT_LOSSLESS_SPEEDUP
               if( !bIsLosslessMode )
               {
-#endif
-              if (pltSize[0]>2 && testedModes[0]>0)
-              {
-                uiIterNumber = 2;
-                testedModes[uiIterNumber]=xCheckPLTMode( rpcBestCU, rpcTempCU, false, uiIterNumber, pltSize);
-                rpcTempCU->initEstData( uiDepth, iQP, bIsLosslessMode );
-              }
+                if (pltSize[0]>2 && testedModes[0]>0)
+                {
+                  uiIterNumber = 2;
+                  testedModes[uiIterNumber]=xCheckPLTMode( rpcBestCU, rpcTempCU, false, uiIterNumber, pltSize);
+                  rpcTempCU->initEstData( uiDepth, iQP, bIsLosslessMode );
+                }
 
-              if( forcePLTPrediction)
-              {
-                uiIterNumber = 1;
-                testedModes[uiIterNumber]=xCheckPLTMode( rpcBestCU, rpcTempCU, true, uiIterNumber, pltSize+1);
-                rpcTempCU->initEstData( uiDepth, iQP, bIsLosslessMode );
-              }
+                if( forcePLTPrediction)
+                {
+                  uiIterNumber = 1;
+                  testedModes[uiIterNumber]=xCheckPLTMode( rpcBestCU, rpcTempCU, true, uiIterNumber, pltSize+1);
+                  rpcTempCU->initEstData( uiDepth, iQP, bIsLosslessMode );
+                }
 
-              if (forcePLTPrediction && pltSize[1]>2 && testedModes[1]>0)
-              {
-                uiIterNumber = 3;
-                testedModes[uiIterNumber]=xCheckPLTMode( rpcBestCU, rpcTempCU, true, uiIterNumber, pltSize+1);
-                rpcTempCU->initEstData( uiDepth, iQP, bIsLosslessMode );
+                if (forcePLTPrediction && pltSize[1]>2 && testedModes[1]>0)
+                {
+                  uiIterNumber = 3;
+                  testedModes[uiIterNumber]=xCheckPLTMode( rpcBestCU, rpcTempCU, true, uiIterNumber, pltSize+1);
+                  rpcTempCU->initEstData( uiDepth, iQP, bIsLosslessMode );
+                }
               }
-#if SCM_W0075_PLT_LOSSLESS_SPEEDUP
-              }
-#endif
             }
           }
         }

@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -84,12 +84,10 @@ public:
                TComPicYuv         ();
   virtual     ~TComPicYuv         ();
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
   // ------------------------------------------------------------------------------------------------
   //  Copy assignment operator
   // ------------------------------------------------------------------------------------------------
-  TComPicYuv&        operator=  (const TComPicYuv& sComPicYuv);                               
-#endif
+  TComPicYuv&        operator=  (const TComPicYuv& sComPicYuv);
 
     // ------------------------------------------------------------------------------------------------
   //  Memory management

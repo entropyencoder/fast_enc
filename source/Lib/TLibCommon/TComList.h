@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -109,14 +109,12 @@ public:
     return std::list< C >::find( this->begin(), this->end(), rcT );
   }
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
   TComIterator eraseElement( TComIterator iterPic )
   {
     TComIterator iterPicTemp;
     iterPicTemp = this->erase( iterPic );
     return iterPicTemp;
   }
-#endif
 };
 
 //! \}

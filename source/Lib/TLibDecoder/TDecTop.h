@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -114,15 +114,10 @@ private:
 
   std::list<InputNALUnit*> m_prefixSEINALUs; /// Buffered up prefix SEI NAL Units.
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
-#if !SCM_U0181_FIX
-  UInt                    m_DPBFullness;
-#endif
   TComPic*                m_pcPicBeforeILF;
   TComPic*                m_pcPicAfterILF;
   Bool                    m_pcTwoVersionsOfCurrDecPicFlag;
   Bool                    m_bIBC;
-#endif
 
 public:
   TDecTop();
@@ -152,21 +147,11 @@ public:
   Void  setDecodedSEIMessageOutputStream(std::ostream *pOpStream) { m_pDecodedSEIOutputStream = pOpStream; }
   UInt  getNumberOfChecksumErrorsDetected() const { return m_cGopDecoder.getNumberOfChecksumErrorsDetected(); }
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
   Bool  getTwoVersionsOfCurrDecPicFlag() { return m_pcTwoVersionsOfCurrDecPicFlag; }
-#if !SCM_U0181_FIX
-  UInt  getDPBFullness() { return m_DPBFullness; }
-  Void  setDPBFullness(UInt val) { m_DPBFullness = val; }
-#endif
   Void  remCurPicBefILFFromDPBDecDPBFullnessByOne(TComList<TComPic*>* pcListPic);
   Void  markCurrentPictureAfterILFforShortTermRef(TComList<TComPic*>* pcListPic);
-#if !SCM_U0181_FIX
-  Void  DPBFullnessIncrementedByOne() { m_DPBFullness++; }
-  Void  DPBFullnessDecrementedByOne() { m_DPBFullness--; }
-#endif
   Bool  isCurrPicAsRef() {return m_bIBC;}
   Void  updateCurrentPictureFlag(TComList<TComPic*>* pcListPic);
-#endif
 
 protected:
   Void  xGetNewPicBuffer  (const TComSPS &sps, const TComPPS &pps, TComPic*& rpcPic, const UInt temporalLayer);
@@ -181,13 +166,7 @@ protected:
   Void      xParsePrefixSEImessages();
   Void      xParsePrefixSEIsForUnknownVCLNal();
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
-#if !SCM_U0181_FIX
-    Void    xRemovalOfPicturesFromDPBAndDecreaseDPBFullness(const TComSPS &sps);
-    Void    xGetNewPicBufferInDPB  (const TComSPS &sps, const TComPPS &pps, TComPic*& rpcPic, const UInt temporalLayer);
-#endif
-    Void    xSwapPicPoiterExeptTComPicYuvRefType(TComPic** picA, TComPic** picB);
-#endif
+  Void    xSwapPicPoiterExeptTComPicYuvRefType(TComPic** picA, TComPic** picB);
 };// END CLASS DEFINITION TDecTop
 
 

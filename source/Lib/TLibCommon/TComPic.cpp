@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,11 +55,8 @@ TComPic::TComPic()
 , m_bNeededForOutput                      (false)
 , m_uiCurrSliceIdx                        (0)
 , m_bCheckLTMSB                           (false)
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
 , m_bCurPic                               (false)
 , m_bInDPB                                (false)
-#endif
-
 {
   for(UInt i=0; i<NUM_PIC_YUV; i++)
   {
@@ -73,7 +70,6 @@ TComPic::~TComPic()
   destroy();
 }
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
 Void TComPic::copyPicInfo( const TComPic& sComPic )
 {
   UInt i = 0;
@@ -97,7 +93,6 @@ Void TComPic::copyPicInfo( const TComPic& sComPic )
     }
   }
 }
-#endif
 
 Void TComPic::create( const TComSPS &sps, const TComPPS &pps,
                       UInt uiPLTMaxSize, UInt uiPLTMaxPredSize, const Bool bIsVirtual )
@@ -211,7 +206,6 @@ Void TComPic::addPictureToHashMapForInter()
 {
   Int picWidth = getSlice( 0 )->getSPS()->getPicWidthInLumaSamples();
   Int picHeight = getSlice( 0 )->getSPS()->getPicHeightInLumaSamples();
-#if SCM_W0078_HASH_BOTTOM_UP // add hash values to hash table
   UInt* uiBlockHashValues[2][2];
   Bool* bIsBlockSame[2][3];
 
@@ -256,13 +250,6 @@ Void TComPic::addPictureToHashMapForInter()
       delete[] bIsBlockSame[i][j];
     }
   }
-#else
-  m_hashMap.create();
-  m_hashMap.addToHashMapByRow( getPicYuvOrg(), picWidth, picHeight, 8, 8, getSlice( 0 )->getSPS()->getBitDepths() );
-  m_hashMap.addToHashMapByRow( getPicYuvOrg(), picWidth, picHeight, 16, 16, getSlice( 0 )->getSPS()->getBitDepths() );
-  m_hashMap.addToHashMapByRow( getPicYuvOrg(), picWidth, picHeight, 32, 32, getSlice( 0 )->getSPS()->getBitDepths() );
-  m_hashMap.addToHashMapByRow( getPicYuvOrg(), picWidth, picHeight, 64, 64, getSlice( 0 )->getSPS()->getBitDepths() );
-#endif
 }
 
 //! \}

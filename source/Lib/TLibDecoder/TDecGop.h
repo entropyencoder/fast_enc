@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -95,11 +95,7 @@ public:
                  );
   Void  create  ();
   Void  destroy ();
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
   Void  decompressSlice(TComInputBitstream* pcBitstream, TComPic* pcPic, TComPic* pcPicAfterILF );
-#else
-  Void  decompressSlice(TComInputBitstream* pcBitstream, TComPic* pcPic );
-#endif
   Void  filterPicture  (TComPic* pcPic );
 
   Void setDecodedPictureHashSEIEnabled(Int enabled) { m_decodedPictureHashSEIEnabled = enabled; }

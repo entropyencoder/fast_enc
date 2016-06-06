@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,6 +83,8 @@
 #define T0196_SELECTIVE_RDOQ                              1 ///< selective RDOQ
 #define U0040_MODIFIED_WEIGHTEDPREDICTION_WITH_BIPRED_AND_CLIPPING 1
 #define U0033_ALTERNATIVE_TRANSFER_CHARACTERISTICS_SEI    1 ///< Alternative transfer characteristics SEI message (JCTVC-U0033, with syntax naming from V1005)
+#define W0062_RECALCULATE_QP_TO_ALIGN_WITH_LAMBDA         0 ///< This recalculates QP to align with the derived lambda (same relation as for all intra coding is used). Currently disabled by default.
+#define OPTIONAL_RESET_SAO_ENCODING_AFTER_IRAP            1 ///< Adds command line option to reset SAO parameters after each IRAP.
 
 // ====================================================================================================================
 // Tool Switches
@@ -121,6 +123,8 @@
 #ifdef  U0132_TARGET_BITS_SATURATION
 #define V0078_ADAPTIVE_LOWER_BOUND                        1 ///< Target bits saturation with adaptive lower bound
 #endif
+#define W0038_DB_OPT                                      1 ///< adaptive DB parameter selection, LoopFilterOffsetInPPS and LoopFilterDisable are set to 0 and DeblockingFilterMetric=2;
+#define W0038_CQP_ADJ                                     1 ///< chroma QP adjustment based on TL, CQPTLAdjustEnabled is set to 1;
 // ====================================================================================================================
 // Derived macros
 // ====================================================================================================================
@@ -179,13 +183,7 @@
 // Processing controls
 //------------------------------------------------
 
-#define SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC     1 ///< JCTVC-U0181: storage of both versions of the current decoded picture into the DPB, treating pictures with in-loop filtering on/off differently, and increase the value of maxDpbPicBuf equal to 7 for profiles supporting IBC
-#define SCM_V0057_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC     1 ///< JCTVC-V0057: DPB considerations when current picture is a reference picture
-#define SCM_W0077_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC     1 ///< JCTVC-W0077: DPB update process when current picture is a reference picture
-#define SCM_W0075_PLT_LOSSLESS_SPEEDUP                   1 ///< JCTVC-W0075: don't perform multi-pass palette encoding in lossless
-#define SCM_W0075_PLT_CHROMA_42X_LOSSLESS                1 ///< JCTVC-W0075: take into account chroma discarding in palette lossless encoding
-#define SCM_W0078_HASH_BOTTOM_UP                         1 ///< JCTVC-W0078: bottom up hash value calculation
-#define SCM_FIX_PARSING_ORDER_TICKET_1422                1 ///< Bug fix for Ticket#1422 : parsing order mismatch between spec and software.
+#define SCM_SPEC_ALIGN_OF_PROFILE_INDICATORS             1 ///< Align profile indications with spec in JCTVC-W1005
 //------------------------------------------------
 // Derived macros
 //------------------------------------------------
@@ -197,18 +195,6 @@
 #define SCM_T0048_PLT_PRED_IN_PPS_REFRESH                16 ///< Periodicity of the palette refresh
 #define SCM_V0034_PLT_CHROMA_SHIFT_ADJ                    5 ///< Chroma error weight as a right shift
 #define SCM_V0034_PLT_CHROMA_SETTINGS     (1<<SCM_V0034_PLT_CHROMA_SHIFT_ADJ) // Weight for non-discarded pixels
-
-
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
-#define SCM_U0181_FIX                                     1
-#endif
-#if SCM_V0057_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
-#define SCM_V0057_FIX                                     1
-#endif
-
-#if !SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC && ( SCM_V0057_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC || SCM_W0077_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC )
-#error
-#endif
 
 //------------------------------------------------
 // Backwards-compatibility
@@ -605,7 +591,11 @@ namespace Profile
     MAINSTILLPICTURE = 3,
     MAINREXT = 4,
     HIGHTHROUGHPUTREXT = 5
+#if SCM_SPEC_ALIGN_OF_PROFILE_INDICATORS
+   ,MAINSCC  = 9
+#else
    ,MAINSCC  = 31 // Placeholder profile for development
+#endif 
   };
 }
 
@@ -668,11 +658,7 @@ enum SPSExtensionFlagIndex
   SPS_EXT__REXT           = 0,
 //SPS_EXT__MVHEVC         = 1, //for use in future versions
 //SPS_EXT__SHVC           = 2, //for use in future versions
-#if SCM_FIX_PARSING_ORDER_TICKET_1422
   SPS_EXT__SCC            = 3, // place holder
-#else
-  SPS_EXT__SCC            = 6, // place holder
-#endif 
   NUM_SPS_EXTENSION_FLAGS = 8
 };
 
@@ -681,11 +667,7 @@ enum PPSExtensionFlagIndex
   PPS_EXT__REXT           = 0,
 //PPS_EXT__MVHEVC         = 1, //for use in future versions
 //PPS_EXT__SHVC           = 2, //for use in future versions
-#if SCM_FIX_PARSING_ORDER_TICKET_1422
-  PPS_EXT__SCC            = 3, 
-#else
-  PPS_EXT__SCC            = 6, // place holder
-#endif 
+  PPS_EXT__SCC            = 3,
   NUM_PPS_EXTENSION_FLAGS = 8
 };
 

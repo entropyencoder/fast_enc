@@ -3,7 +3,7 @@
  * and contributor rights, including patent rights, and no such rights are
  * granted under this license.
  *
- * Copyright (c) 2010-2015, ITU/ISO/IEC
+ * Copyright (c) 2010-2016, ITU/ISO/IEC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,18 +83,14 @@ private:
   SEIMessages  m_SEIs; ///< Any SEI messages that have been received.  If !NULL we own the object.
 
   TComHash              m_hashMap;
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
   Bool                  m_bCurPic;
   Bool                  m_bInDPB;
-#endif
 
 public:
   TComPic();
   virtual ~TComPic();
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
   Void          copyPicInfo(const TComPic& sComPic);
-#endif
 
   Void          create( const TComSPS &sps, const TComPPS &pps,
                         UInt uiPLTMaxSize, UInt uiPLTMaxPredSize, const Bool bIsVirtual /*= false*/ );
@@ -111,10 +107,11 @@ public:
   Void          setCheckLTMSBPresent     (Bool b ) {m_bCheckLTMSB=b;}
   Bool          getCheckLTMSBPresent     () { return m_bCheckLTMSB;}
 
-  TComPicSym*   getPicSym()           { return  &m_picSym;    }
-  const TComPicSym* getPicSym() const { return  &m_picSym;    }
-  TComSlice*    getSlice(Int i)       { return  m_picSym.getSlice(i);  }
-  Int           getPOC() const        { return  m_picSym.getSlice(m_uiCurrSliceIdx)->getPOC();  }
+  TComPicSym*   getPicSym()                        { return  &m_picSym;    }
+  const TComPicSym* getPicSym() const              { return  &m_picSym;    }
+  TComSlice*    getSlice(Int i)                    { return  m_picSym.getSlice(i);  }
+  const TComSlice* getSlice(Int i) const           { return  m_picSym.getSlice(i);  }
+  Int           getPOC() const                     { return  m_picSym.getSlice(m_uiCurrSliceIdx)->getPOC();  }
   TComDataCU*   getCtu( UInt ctuRsAddr )           { return  m_picSym.getCtu( ctuRsAddr ); }
   const TComDataCU* getCtu( UInt ctuRsAddr ) const { return  m_picSym.getCtu( ctuRsAddr ); }
 
@@ -176,13 +173,10 @@ public:
   TComHash*     getHashMap() { return &m_hashMap; }
   const TComHash* getHashMap() const { return &m_hashMap; }
 
-#if SCM_U0181_STORAGE_BOTH_VERSIONS_CURR_DEC_PIC
   Bool          getCurrentPicFlag()         { return m_bCurPic; }
   Void          setCurrentPicFlag(Bool b)   { m_bCurPic = b; }
   Bool          getCurrPicInDPBFlag()       { return m_bInDPB; }
   Void          setCurrPicInDPBFlag(Bool b) { m_bInDPB = b; }
-#endif
-
 
   /* field coding parameters*/
 
